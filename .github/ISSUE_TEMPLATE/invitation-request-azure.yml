@@ -1,0 +1,54 @@
+name: 초대 요청
+
+description: Azure 구독에 초대를 요청하기 위한 이슈 템플릿입니다.
+
+title: "[초대 요청] "
+
+labels:
+  - invitation
+  - request
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        환영합니다! Azure 구독에 초대를 요청하기 위해 아래 양식을 작성해주세요.
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: 요청 유형
+      options:
+        - 초대 요청
+    validations:
+      required: true
+
+  - type: dropdown
+    id: organization
+    attributes:
+      label: 조직
+      options:
+        - devrelkorea.org
+    validations:
+      required: true
+
+  - type: input
+    id: name
+    attributes:
+      label: 이름
+      placeholder: 김개발
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: 이메일
+      placeholder: kgaebal@gmail.com
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        초대 요청을 제출하면 제출하신 이메일 주소로 Azure 구독 초대장을 발송합니다. 초대장을 수락하면 구독에 참여할 수 있습니다. 감사합니다!
