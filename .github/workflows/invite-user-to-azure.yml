@@ -41,58 +41,43 @@ jobs:
       - name: Check event payload - from issue
         if: |
           github.event_name != 'workflow_dispatch'
-        shell: pwsh
+        shell: bash
         env:
           ISSUE_PAYLOAD: ${{ toJson(github.event.issue) }}
         run: |
-          $env:ISSUE_PAYLOAD |
-            Out-File -FilePath "${{ github.workspace }}/payload.json" -Encoding utf8 -Force
+          printf '%s' "$ISSUE_PAYLOAD" > "${{ github.workspace }}/payload.json"
 
       - name: Check event payload - from workflow_dispatch
         if: |
           github.event_name == 'workflow_dispatch'
-        shell: pwsh
+        shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
-          gh api "/repos/${{ github.repository }}/issues/${{ github.event.inputs.issue-number }}" |
-            Out-File -FilePath "${{ github.workspace }}/payload.json" -Encoding utf8 -Force
+          gh api "/repos/${{ github.repository }}/issues/${{ github.event.inputs.issue-number }}" \
+            > "${{ github.workspace }}/payload.json"
 
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
       - name: Validate Azure subscription request
-        shell: pwsh
-        run: |
-          ./scripts/Test-AzureInvitationRequest.ps1 `
-            -InputFile "${{ github.workspace }}/payload.json" `
-            -OutputFile "${{ github.workspace }}/issue.json" `
-            -DueDate "${{ vars.INVITATION_DUE_DATE }}" `
-            -Organization "devrelkorea.org"
-
-      - name: Check validation result
         id: issue
-        shell: pwsh
+        shell: bash
+        env:
+          DUE_DATE: ${{ vars.INVITATION_DUE_DATE }}
         run: |
-          $result = Get-Content "${{ github.workspace }}/issue.json" | ConvertFrom-Json
-
-          $tzi = [TimeZoneInfo]::FindSystemTimeZoneById("Asia/Seoul")
-
-          # Common
-          echo "issueNumber=$($result.number)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "requestType=$($result.body.requestType)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "submittedAt=$([TimeZoneInfo]::ConvertTime($result.createdAt, $tzi).ToString("yyyy-MM-dd HH:mm:ss.fff") + " +09:00")" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "dueBy=$([TimeZoneInfo]::ConvertTime($result.dueDate, $tzi).ToString("yyyy-MM-dd HH:mm:ss.fff") + " +09:00")" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-
-          # Verification result
-          echo "isValid=$($result.isValid)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "invalidReasons=$('<ul><li> ' + $($result.invalidReasons -join '</li><li> ') + '</li></ul>')" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-
-          # Invitation details
-          echo "org=$($result.body.organisation)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "githubHandle=$($result.body.githubHandle)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "name=$($result.body.name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "email=$($result.body.email)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
+          dotnet run --file ./scripts/Validate-InvitationRequest.cs -- \
+            --request-type azure \
+            --input "${{ github.workspace }}/payload.json" \
+            --output "${{ github.workspace }}/issue.json" \
+            --due-date "$DUE_DATE" \
+            --organization "devrelkorea.org" \
+            --github-output "$GITHUB_OUTPUT"
 
       - name: Comment to issue - Acknowledge
         uses: actions-cool/issues-helper@v3
@@ -160,12 +145,16 @@ jobs:
         if: |
           steps.issue.outputs.isValid == 'true' &&
           steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
-        shell: pwsh
+        shell: bash
+        env:
+          INVITEE_EMAIL: ${{ steps.issue.outputs.email }}
+          INVITEE_NAME: ${{ steps.issue.outputs.name }}
+          SECURITY_GROUP: ${{ vars.AZURE_SECURITY_GROUP }}
         run: |
-          ./scripts/Invite-ToAzure.ps1 `
-            -Email "${{ steps.issue.outputs.email }}" `
-            -Name "${{ steps.issue.outputs.name }}" `
-            -SecurityGroup "${{ vars.AZURE_SECURITY_GROUP }}"
+          dotnet run --file ./scripts/Invite-ToAzure.cs -- \
+            --email "$INVITEE_EMAIL" \
+            --name "$INVITEE_NAME" \
+            --security-group "$SECURITY_GROUP"
 
       - name: Add label - Complete
         if: |
