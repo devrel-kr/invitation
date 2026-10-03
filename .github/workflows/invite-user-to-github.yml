@@ -20,7 +20,7 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[GitHub 조직 초대 요청]')
+      startsWith(github.event.issue.title, '[GitHub organization invitation request]')
 
     runs-on: ubuntu-latest
 
@@ -86,9 +86,9 @@ jobs:
           issue-number: ${{ steps.issue.outputs.issueNumber }}
           emoji: "+1,rocket"
           body: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }} 님!
+            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            생성하신 GitHub 조직 초대 요청을 확인하고 있습니다.
+            We have received your GitHub organization invitation request and are reviewing it.
 
       - name: Add label - Invalid
         if: |
@@ -110,12 +110,12 @@ jobs:
           token: ${{ steps.bot-token.outputs.token }}
           issue-number: ${{ steps.issue.outputs.issueNumber }}
           body: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }} 님!
+            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            - 요청 시각: ${{ steps.issue.outputs.submittedAt }}
-            - 요청 마감 시각: ${{ steps.issue.outputs.dueBy }}
+            - Submitted at: ${{ steps.issue.outputs.submittedAt }}
+            - Due by: ${{ steps.issue.outputs.dueBy }}
 
-            제출하신 GitHub 조직 초대 요청은 다음과 같은 이유로 유효하지 않습니다. 😢
+            Your GitHub organization invitation request is not valid for the following reasons:
 
             ${{ steps.issue.outputs.invalidReasons }}
 
@@ -127,7 +127,7 @@ jobs:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "제출한 요청이 유효하지 않습니다. 이슈를 닫습니다." \
+            -c "The submitted request is invalid. Closing this issue." \
             -R ${{ github.event.repository.full_name }}
 
       - name: Invite user to GitHub organization
@@ -175,9 +175,9 @@ jobs:
           issue-number: ${{ steps.issue.outputs.issueNumber }}
           emoji: "+1,rocket"
           body: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }}님!
+            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            GitHub 조직 초대를 발송했습니다. 초대를 수락하면 조직에 참여할 수 있습니다. 감사합니다!
+            A GitHub organization invitation has been sent to your account. After accepting the invitation, you can join the organization. Thank you!
 
       - name: Close issue - Complete
         if: |
@@ -187,5 +187,5 @@ jobs:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "GitHub 조직 초대 요청을 완료했습니다. 이슈를 닫습니다." \
+            -c "The GitHub organization invitation request is complete. Closing this issue." \
             -R ${{ github.event.repository.full_name }}

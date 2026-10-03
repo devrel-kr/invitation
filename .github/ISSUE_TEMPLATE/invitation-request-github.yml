@@ -1,7 +1,7 @@
-name: GitHub 조직 초대 요청
-description: GitHub 조직에 초대를 요청하기 위한 이슈 템플릿입니다.
+name: GitHub organization invitation request
+description: Issue template for requesting an invitation to a GitHub organization.
 
-title: "[GitHub 조직 초대 요청] "
+title: "[GitHub organization invitation request] "
 
 labels:
   - invitation
@@ -12,21 +12,21 @@ body:
     attributes:
       value: |
         <br/>
-        환영합니다! GitHub 조직에 초대를 요청하기 위해 아래 양식을 작성해주세요.
+        Welcome! Please fill in the form below to request an invitation to the GitHub organization.
 
   - type: dropdown
     id: request-type
     attributes:
-      label: 요청 유형
+      label: Request Type
       options:
-        - GitHub 조직 초대 요청
+        - GitHub organization invitation request
     validations:
       required: true
 
   - type: dropdown
     id: organization
     attributes:
-      label: 조직
+      label: Organization
       options:
         - devrel-kr
     validations:
@@ -35,8 +35,8 @@ body:
   - type: input
     id: github-handle
     attributes:
-      label: GitHub 핸들
-      description: 이슈를 작성하는 본인의 GitHub 계정 이름을 `@` 없이 입력해 주세요.
+      label: GitHub Handle
+      description: Enter your GitHub username without the `@` symbol.
       placeholder: octocat
     validations:
       required: true
@@ -44,13 +44,13 @@ body:
   - type: checkboxes
     id: acknowledgements
     attributes:
-      label: 확인 사항
+      label: Confirmation
       options:
-        - label: 입력한 GitHub 핸들은 이슈를 작성하는 본인의 계정입니다.
+        - label: The GitHub handle I entered is my own account.
           required: true
 
   - type: markdown
     attributes:
       value: |
         <br/>
-        초대 요청을 제출하면 GitHub 알림과 계정에 등록된 이메일로 조직 초대가 발송됩니다. 초대를 수락하면 조직에 참여할 수 있습니다. 감사합니다!
+        When you submit the request, GitHub will send the organization invitation to your account and registered email address. After accepting the invitation, you can join the organization.

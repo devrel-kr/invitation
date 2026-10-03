@@ -22,7 +22,7 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[Azure 구독 초대 요청]')
+      startsWith(github.event.issue.title, '[Azure subscription invitation request]')
 
     runs-on: ubuntu-latest
 
@@ -87,9 +87,9 @@ jobs:
           issue-number: ${{ steps.issue.outputs.issueNumber }}
           emoji: "+1,rocket"
           body: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }} 님!
+            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            생성하신 이슈는 현재 확인 중이며, 완료 여부를 확인한 후 다시 알려드리겠습니다.
+            Your issue is being reviewed. We will notify you again once we confirm whether it is complete.
 
       - name: Add a label - Invalid
         if: |
@@ -111,12 +111,12 @@ jobs:
           token: ${{ steps.bot-token.outputs.token }}
           issue-number: ${{ steps.issue.outputs.issueNumber }}
           body: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }} 님!
+            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            - 요청 시각: ${{ steps.issue.outputs.submittedAt }}
-            - 요청 마감 시각: ${{ steps.issue.outputs.dueBy }}
+            - Submitted at: ${{ steps.issue.outputs.submittedAt }}
+            - Due by: ${{ steps.issue.outputs.dueBy }}
 
-            하지만 제출하신 요청은 다음과 같은 이유로 인해 유효하지 않습니다. 😢
+            Your request is not valid for the following reasons:
 
             ${{ steps.issue.outputs.invalidReasons }}
 
@@ -128,13 +128,13 @@ jobs:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "제출한 요청이 유효하지 않습니다. 이슈를 닫습니다." \
+            -c "The submitted request is invalid. Closing this issue." \
             -R ${{ github.event.repository.full_name }}
 
       - name: Sign in to Azure
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.requestType == 'Azure subscription invitation request'
         uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -144,7 +144,7 @@ jobs:
       - name: Invite user to Azure tenant
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.requestType == 'Azure subscription invitation request'
         shell: bash
         env:
           INVITEE_EMAIL: ${{ steps.issue.outputs.email }}
@@ -159,7 +159,7 @@ jobs:
       - name: Add label - Complete
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.requestType == 'Azure subscription invitation request'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
@@ -171,7 +171,7 @@ jobs:
       - name: Remove label - request
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.requestType == 'Azure subscription invitation request'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
@@ -183,7 +183,7 @@ jobs:
       - name: Comment to issue - Complete
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.requestType == 'Azure subscription invitation request'
         uses: actions-cool/issues-helper@v3
         with:
           actions: "create-comment"
@@ -191,18 +191,18 @@ jobs:
           issue-number: ${{ steps.issue.outputs.issueNumber }}
           emoji: "+1,rocket"
           body: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }}님!
+            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            입력하신 이메일 주소로 초대장을 발송했습니다. 초대장을 수락하면 조직에 참여할 수 있습니다. 감사합니다!
+            An invitation has been sent to the email address you provided. After accepting the invitation, you can join the subscription.
 
       - name: Close issue - Complete
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.requestType == 'Azure subscription invitation request'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "초대 요청을 완료했습니다. 이슈를 닫습니다." \
+            -c "The invitation request is complete. Closing this issue." \
             -R ${{ github.event.repository.full_name }}

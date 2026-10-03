@@ -1,8 +1,8 @@
-name: Azure 구독 초대 요청
+name: Azure subscription invitation request
 
-description: Azure 구독에 초대를 요청하기 위한 이슈 템플릿입니다.
+description: Issue template for requesting access to an Azure subscription.
 
-title: "[Azure 구독 초대 요청] "
+title: "[Azure subscription invitation request] "
 
 labels:
   - invitation
@@ -13,21 +13,21 @@ body:
     attributes:
       value: |
         <br/>
-        환영합니다! Azure 구독에 초대를 요청하기 위해 아래 양식을 작성해주세요.
+        Welcome! Please complete the form below to request an Azure subscription invitation.
 
   - type: dropdown
     id: request-type
     attributes:
-      label: 요청 유형
+      label: Request Type
       options:
-        - Azure 구독 초대 요청
+        - Azure subscription invitation request
     validations:
       required: true
 
   - type: dropdown
     id: organization
     attributes:
-      label: 조직
+      label: Organization
       options:
         - devrelkorea.org
     validations:
@@ -36,7 +36,7 @@ body:
   - type: input
     id: github-profile-link
     attributes:
-      label: GitHub 프로필 링크
+      label: GitHub Profile Link
       placeholder: https://github.com/octocat
     validations:
       required: true
@@ -44,16 +44,16 @@ body:
   - type: input
     id: name
     attributes:
-      label: 이름
-      placeholder: 김개발
+      label: Name
+      placeholder: Jane Developer
     validations:
       required: true
 
   - type: input
     id: email
     attributes:
-      label: 이메일
-      placeholder: kgaebal@gmail.com (반드시 gmail, outlook, naver 등과 같은 개인 이메일 주소를 사용하세요)
+      label: Email
+      placeholder: jane.developer@gmail.com (use a personal email such as Gmail, Outlook, or Naver)
     validations:
       required: true
 
@@ -61,4 +61,4 @@ body:
     attributes:
       value: |
         <br/>
-        초대 요청을 제출하면 제출하신 이메일 주소로 Azure 구독 초대장을 발송합니다. 초대장을 수락하면 구독에 참여할 수 있습니다. 감사합니다!
+        When you submit the request, an Azure subscription invitation will be sent to the email address you provide. After accepting the invitation, you can join the subscription.

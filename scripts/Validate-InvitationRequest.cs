@@ -18,15 +18,15 @@ var body = options.RequestType switch
 
 if (issue.CreatedAt > options.DueDate)
 {
-    body.InvalidReasons.Add("제출 마감기한이 지났습니다.");
+    body.InvalidReasons.Add("The submission deadline has passed.");
 }
 
 if (!string.IsNullOrWhiteSpace(body.GitHubHandle) &&
     !string.Equals(body.GitHubHandle, issue.CreatedBy, StringComparison.OrdinalIgnoreCase))
 {
     body.InvalidReasons.Add(options.RequestType == RequestType.Azure
-        ? "GitHub 프로필 URL이 이슈 작성자와 일치하지 않습니다."
-        : "GitHub 핸들이 이슈 작성자와 일치하지 않습니다.");
+        ? "The GitHub profile URL does not match the issue author."
+        : "The GitHub handle does not match the issue author.");
 }
 
 var result = new ValidationResult(
@@ -61,37 +61,37 @@ return;
 
 static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization)
 {
-    var requestType = GetIssueFormValue(issueBody, "요청 유형");
-    var organisation = GetIssueFormValue(issueBody, "조직")?.TrimEnd('/');
-    var profileUrl = GetIssueFormValue(issueBody, "GitHub 프로필 링크")?.TrimEnd('/');
-    var name = GetIssueFormValue(issueBody, "이름");
-    var email = GetIssueFormValue(issueBody, "이메일");
+    var requestType = GetIssueFormValue(issueBody, "Request Type");
+    var organisation = GetIssueFormValue(issueBody, "Organization")?.TrimEnd('/');
+    var profileUrl = GetIssueFormValue(issueBody, "GitHub Profile Link")?.TrimEnd('/');
+    var name = GetIssueFormValue(issueBody, "Name");
+    var email = GetIssueFormValue(issueBody, "Email");
     var invalidReasons = new List<string>();
 
-    if (!string.Equals(requestType, "Azure 구독 초대 요청", StringComparison.OrdinalIgnoreCase))
+    if (!string.Equals(requestType, "Azure subscription invitation request", StringComparison.OrdinalIgnoreCase))
     {
-        invalidReasons.Add("요청 유형이 올바르지 않습니다.");
+        invalidReasons.Add("The request type is invalid.");
     }
 
     if (string.IsNullOrWhiteSpace(organisation) ||
         !string.Equals(organisation, expectedOrganization, StringComparison.OrdinalIgnoreCase))
     {
-        invalidReasons.Add("Azure 조직 URL이 올바르지 않습니다.");
+        invalidReasons.Add("The Azure organization URL is invalid.");
     }
 
     if (!IsGitHubProfileUrl(profileUrl))
     {
-        invalidReasons.Add("GitHub 프로필 URL이 올바르지 않습니다.");
+        invalidReasons.Add("The GitHub profile URL is invalid.");
     }
 
     if (string.IsNullOrWhiteSpace(name))
     {
-        invalidReasons.Add("이름이 올바르지 않습니다.");
+        invalidReasons.Add("The name is invalid.");
     }
 
     if (!IsAllowedEmail(email))
     {
-        invalidReasons.Add("이메일 주소가 올바르지 않습니다.");
+        invalidReasons.Add("The email address is invalid.");
     }
 
     var githubHandle = profileUrl?.Replace("https://github.com/", "", StringComparison.Ordinal);
@@ -100,24 +100,24 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
 
 static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganization)
 {
-    var requestType = GetIssueFormValue(issueBody, "요청 유형");
-    var organisation = GetIssueFormValue(issueBody, "조직");
-    var githubHandle = GetIssueFormValue(issueBody, "GitHub 핸들");
+    var requestType = GetIssueFormValue(issueBody, "Request Type");
+    var organisation = GetIssueFormValue(issueBody, "Organization");
+    var githubHandle = GetIssueFormValue(issueBody, "GitHub Handle");
     var invalidReasons = new List<string>();
 
-    if (!string.Equals(requestType, "GitHub 조직 초대 요청", StringComparison.OrdinalIgnoreCase))
+    if (!string.Equals(requestType, "GitHub organization invitation request", StringComparison.OrdinalIgnoreCase))
     {
-        invalidReasons.Add("요청 유형이 올바르지 않습니다.");
+        invalidReasons.Add("The request type is invalid.");
     }
 
     if (!string.Equals(organisation, expectedOrganization, StringComparison.OrdinalIgnoreCase))
     {
-        invalidReasons.Add("GitHub 조직이 올바르지 않습니다.");
+        invalidReasons.Add("The GitHub organization is invalid.");
     }
 
     if (!IsGitHubHandle(githubHandle))
     {
-        invalidReasons.Add("GitHub 핸들이 올바르지 않습니다.");
+        invalidReasons.Add("The GitHub handle is invalid.");
     }
 
     return new ValidatedBody(requestType, organisation, githubHandle, null, null, invalidReasons);
