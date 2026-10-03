@@ -61,14 +61,17 @@ return;
 
 static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization)
 {
-    var requestType = GetIssueFormValue(issueBody, "Request Type");
-    var organisation = GetIssueFormValue(issueBody, "Organization")?.TrimEnd('/');
-    var profileUrl = GetIssueFormValue(issueBody, "GitHub Profile Link")?.TrimEnd('/');
-    var name = GetIssueFormValue(issueBody, "Name");
-    var email = GetIssueFormValue(issueBody, "Email");
+    var requestType = GetIssueFormValue(issueBody, "Request Type", "요청 유형");
+    var organisation = GetIssueFormValue(issueBody, "Organization", "조직")?.TrimEnd('/');
+    var profileUrl = GetIssueFormValue(issueBody, "GitHub Profile Link", "GitHub 프로필 링크")?.TrimEnd('/');
+    var name = GetIssueFormValue(issueBody, "Name", "이름");
+    var email = GetIssueFormValue(issueBody, "Email", "이메일");
     var invalidReasons = new List<string>();
+    var hasExpectedRequestType =
+        string.Equals(requestType, "Azure subscription invitation request", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(requestType, "Azure 구독 초대 요청", StringComparison.OrdinalIgnoreCase);
 
-    if (!string.Equals(requestType, "Azure subscription invitation request", StringComparison.OrdinalIgnoreCase))
+    if (!hasExpectedRequestType)
     {
         invalidReasons.Add("The request type is invalid.");
     }
@@ -95,17 +98,23 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
     }
 
     var githubHandle = profileUrl?.Replace("https://github.com/", "", StringComparison.Ordinal);
-    return new ValidatedBody(requestType, organisation, githubHandle, name, email, invalidReasons);
+    var normalizedRequestType = hasExpectedRequestType
+        ? "Azure subscription invitation request"
+        : requestType;
+    return new ValidatedBody(normalizedRequestType, organisation, githubHandle, name, email, invalidReasons);
 }
 
 static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganization)
 {
-    var requestType = GetIssueFormValue(issueBody, "Request Type");
-    var organisation = GetIssueFormValue(issueBody, "Organization");
-    var githubHandle = GetIssueFormValue(issueBody, "GitHub Handle");
+    var requestType = GetIssueFormValue(issueBody, "Request Type", "요청 유형");
+    var organisation = GetIssueFormValue(issueBody, "Organization", "조직");
+    var githubHandle = GetIssueFormValue(issueBody, "GitHub Handle", "GitHub 핸들");
     var invalidReasons = new List<string>();
+    var hasExpectedRequestType =
+        string.Equals(requestType, "GitHub organization invitation request", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(requestType, "GitHub 조직 초대 요청", StringComparison.OrdinalIgnoreCase);
 
-    if (!string.Equals(requestType, "GitHub organization invitation request", StringComparison.OrdinalIgnoreCase))
+    if (!hasExpectedRequestType)
     {
         invalidReasons.Add("The request type is invalid.");
     }
@@ -120,23 +129,31 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
         invalidReasons.Add("The GitHub handle is invalid.");
     }
 
-    return new ValidatedBody(requestType, organisation, githubHandle, null, null, invalidReasons);
+    var normalizedRequestType = hasExpectedRequestType
+        ? "GitHub organization invitation request"
+        : requestType;
+    return new ValidatedBody(normalizedRequestType, organisation, githubHandle, null, null, invalidReasons);
 }
 
-static string? GetIssueFormValue(string body, string label)
+static string? GetIssueFormValue(string body, params string[] labels)
 {
-    var match = Regex.Match(
-        body,
-        $@"^###\s+{Regex.Escape(label)}\s*\r?\n(.*?)(?=^###\s+|\z)",
-        RegexOptions.Multiline | RegexOptions.Singleline | RegexOptions.CultureInvariant);
-
-    if (!match.Success)
+    foreach (var label in labels)
     {
-        return null;
+        var match = Regex.Match(
+            body,
+            $@"^###\s+{Regex.Escape(label)}\s*\r?\n(.*?)(?=^###\s+|\z)",
+            RegexOptions.Multiline | RegexOptions.Singleline | RegexOptions.CultureInvariant);
+
+        if (!match.Success)
+        {
+            continue;
+        }
+
+        var value = match.Groups[1].Value.Trim();
+        return string.Equals(value, "_No response_", StringComparison.OrdinalIgnoreCase) ? null : value;
     }
 
-    var value = match.Groups[1].Value.Trim();
-    return string.Equals(value, "_No response_", StringComparison.OrdinalIgnoreCase) ? null : value;
+    return null;
 }
 
 static bool IsGitHubHandle(string? handle) =>

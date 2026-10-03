@@ -22,7 +22,8 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[Azure subscription invitation request]')
+      startsWith(github.event.issue.title, '[Azure subscription invitation request]') ||
+      startsWith(github.event.issue.title, '[Azure 구독 초대 요청]')
 
     runs-on: ubuntu-latest
 
