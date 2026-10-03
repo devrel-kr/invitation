@@ -1,4 +1,4 @@
-name: "Workflow: User Invitation to Azure Subscription"
+name: "Workflow: User Invitation to GitHub Organization"
 
 on:
   issues:
@@ -12,17 +12,15 @@ on:
 
 permissions:
   contents: read
-  id-token: write
   issues: write
-  pull-requests: write
 
 jobs:
   invite_user:
-    name: "Invite User to Azure Subscription"
+    name: "Invite User to GitHub Organization"
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[Azure 구독 초대 요청]')
+      startsWith(github.event.issue.title, '[GitHub 조직 초대 요청]')
 
     runs-on: ubuntu-latest
 
@@ -37,6 +35,7 @@ jobs:
           repositories: invitation
           permission-contents: read
           permission-issues: write
+          permission-members: write
 
       - name: Check event payload - from issue
         if: |
@@ -61,38 +60,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Validate Azure subscription request
+      - name: Validate GitHub organization request
         shell: pwsh
         run: |
-          ./scripts/Test-AzureInvitationRequest.ps1 `
+          ./scripts/Test-GitHubInvitationRequest.ps1 `
             -InputFile "${{ github.workspace }}/payload.json" `
             -OutputFile "${{ github.workspace }}/issue.json" `
             -DueDate "${{ vars.INVITATION_DUE_DATE }}" `
-            -Organization "devrelkorea.org"
+            -Organization "devrel-kr"
 
       - name: Check validation result
         id: issue
         shell: pwsh
         run: |
-          $result = Get-Content "${{ github.workspace }}/issue.json" | ConvertFrom-Json
-
+          $result = Get-Content "${{ github.workspace }}/issue.json" -Raw | ConvertFrom-Json
           $tzi = [TimeZoneInfo]::FindSystemTimeZoneById("Asia/Seoul")
 
-          # Common
-          echo "issueNumber=$($result.number)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "requestType=$($result.body.requestType)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "submittedAt=$([TimeZoneInfo]::ConvertTime($result.createdAt, $tzi).ToString("yyyy-MM-dd HH:mm:ss.fff") + " +09:00")" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "dueBy=$([TimeZoneInfo]::ConvertTime($result.dueDate, $tzi).ToString("yyyy-MM-dd HH:mm:ss.fff") + " +09:00")" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-
-          # Verification result
-          echo "isValid=$($result.isValid)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "invalidReasons=$('<ul><li> ' + $($result.invalidReasons -join '</li><li> ') + '</li></ul>')" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-
-          # Invitation details
-          echo "org=$($result.body.organisation)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "githubHandle=$($result.body.githubHandle)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "name=$($result.body.name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
-          echo "email=$($result.body.email)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf-8 -Append
+          echo "issueNumber=$($result.number)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "submittedAt=$([TimeZoneInfo]::ConvertTime($result.createdAt, $tzi).ToString("yyyy-MM-dd HH:mm:ss.fff") + " +09:00")" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "dueBy=$([TimeZoneInfo]::ConvertTime($result.dueDate, $tzi).ToString("yyyy-MM-dd HH:mm:ss.fff") + " +09:00")" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "isValid=$($result.isValid)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "invalidReasons=$('<ul><li> ' + $($result.invalidReasons -join '</li><li> ') + '</li></ul>')" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "org=$($result.body.organisation)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          echo "githubHandle=$($result.body.githubHandle)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Comment to issue - Acknowledge
         uses: actions-cool/issues-helper@v3
@@ -104,9 +94,9 @@ jobs:
           body: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }} 님!
 
-            생성하신 이슈는 현재 확인 중이며, 완료 여부를 확인한 후 다시 알려드리겠습니다.
+            생성하신 GitHub 조직 초대 요청을 확인하고 있습니다.
 
-      - name: Add a label - Invalid
+      - name: Add label - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
@@ -131,7 +121,7 @@ jobs:
             - 요청 시각: ${{ steps.issue.outputs.submittedAt }}
             - 요청 마감 시각: ${{ steps.issue.outputs.dueBy }}
 
-            하지만 제출하신 요청은 다음과 같은 이유로 인해 유효하지 않습니다. 😢
+            제출하신 GitHub 조직 초대 요청은 다음과 같은 이유로 유효하지 않습니다. 😢
 
             ${{ steps.issue.outputs.invalidReasons }}
 
@@ -146,55 +136,42 @@ jobs:
             -c "제출한 요청이 유효하지 않습니다. 이슈를 닫습니다." \
             -R ${{ github.event.repository.full_name }}
 
-      - name: Sign in to Azure
+      - name: Invite user to GitHub organization
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
-        uses: azure/login@v3
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Invite user to Azure tenant
-        if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.isValid == 'true'
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
-          ./scripts/Invite-ToAzure.ps1 `
-            -Email "${{ steps.issue.outputs.email }}" `
-            -Name "${{ steps.issue.outputs.name }}" `
-            -SecurityGroup "${{ vars.AZURE_SECURITY_GROUP }}"
+          ./scripts/Invite-ToGitHubOrg.ps1 `
+            -Organization "${{ steps.issue.outputs.org }}" `
+            -GitHubHandle "${{ steps.issue.outputs.githubHandle }}"
 
       - name: Add label - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
-          --add-label "complete" \
-          -R ${{ github.event.repository.full_name }}
+            --add-label "complete" \
+            -R ${{ github.event.repository.full_name }}
 
       - name: Remove label - request
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
-          --remove-label "request" \
-          -R ${{ github.event.repository.full_name }}
+            --remove-label "request" \
+            -R ${{ github.event.repository.full_name }}
 
       - name: Comment to issue - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.isValid == 'true'
         uses: actions-cool/issues-helper@v3
         with:
           actions: "create-comment"
@@ -204,16 +181,15 @@ jobs:
           body: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}님!
 
-            입력하신 이메일 주소로 초대장을 발송했습니다. 초대장을 수락하면 조직에 참여할 수 있습니다. 감사합니다!
+            GitHub 조직 초대를 발송했습니다. 초대를 수락하면 조직에 참여할 수 있습니다. 감사합니다!
 
       - name: Close issue - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure 구독 초대 요청'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "초대 요청을 완료했습니다. 이슈를 닫습니다." \
+            -c "GitHub 조직 초대 요청을 완료했습니다. 이슈를 닫습니다." \
             -R ${{ github.event.repository.full_name }}
