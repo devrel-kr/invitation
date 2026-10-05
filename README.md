@@ -1,5 +1,7 @@
 # Onboarding to Azure and GitHub
 
+[![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea44f?logo=github&logoColor=white)](https://github.com/devrel-kr/invitation/generate)
+
 This repository is a reusable GitHub issue-form and Actions template for onboarding people to:
 
 - an Azure tenant, subscription, and security group; and
@@ -69,24 +71,19 @@ The GitHub App used by `invite-user-to-github.yml` must have the organization pe
 
 ## GitHub configuration
 
-The workflows use these repository variables:
+The workflows use the following GitHub Actions configuration:
 
-| Name | Used by | Purpose |
-| --- | --- | --- |
-| `BOT_APP_ID` | Both workflows | GitHub App ID used to comment, label, and close issues |
-| `AZURE_CLIENT_ID` | Azure workflow | Azure service-principal application ID |
-| `AZURE_TENANT_ID` | Azure workflow | Azure tenant ID |
-| `AZURE_SUBSCRIPTION_ID` | Azure workflow | Azure subscription ID |
-| `AZURE_SECURITY_GROUP` | Azure workflow | Security group receiving invited users |
-| `INVITATION_DUE_DATE` | Both workflows | ISO 8601 deadline for submitted requests |
+| Name | Type | Used by | Why it is needed |
+| --- | --- | --- | --- |
+| `BOT_APP_ID` | Variable | Both workflows | Identifies the GitHub App that manages request issues and, for GitHub onboarding, sends organization invitations |
+| `BOT_PRIVATE_KEY` | Secret | Both workflows | Authenticates the workflow as the GitHub App without storing a long-lived access token |
+| `AZURE_CLIENT_ID` | Variable | Azure workflow | Identifies the Microsoft Entra application used for GitHub Actions OIDC sign-in |
+| `AZURE_TENANT_ID` | Variable | Azure workflow | Selects the Microsoft Entra tenant where users are invited |
+| `AZURE_SUBSCRIPTION_ID` | Variable | Azure workflow | Selects the Azure subscription associated with the workflow identity |
+| `AZURE_SECURITY_GROUP` | Variable | Azure workflow | Identifies the group to which invited users are added |
+| `INVITATION_DUE_DATE` | Variable | Both workflows | Rejects requests submitted after the program deadline |
 
-Add this repository secret:
-
-| Name | Purpose |
-| --- | --- |
-| `BOT_PRIVATE_KEY` | Private key for the GitHub App |
-
-The GitHub App must be installed on the repository. For the GitHub organization workflow, it must also be installed in the target organization with organization member write permission.
+See [Configuration guide](docs/configuration.md) for instructions to create the GitHub App and Azure workload identity, set every variable and secret, understand the required permissions, and verify the configuration.
 
 ## Azure service-principal setup
 
