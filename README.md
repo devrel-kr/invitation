@@ -1,26 +1,19 @@
 # Onboarding to Azure and GitHub
 
-This repository is a reusable GitHub issue-form and Actions template for
-onboarding people to:
+This repository is a reusable GitHub issue-form and Actions template for onboarding people to:
 
 - an Azure tenant, subscription, and security group; and
 - a GitHub organization.
 
-An applicant submits an issue form, the matching workflow validates the
-request, performs the invitation, comments on the issue, applies labels, and
-closes the issue.
+An applicant submits an issue form, the matching workflow validates the request, performs the invitation, comments on the issue, applies labels, and closes the issue.
 
 ## What this template includes
 
 - English and Korean issue forms for Azure and GitHub onboarding.
-- Separate workflows for Azure subscription and GitHub organization
-  invitations.
-- A local file-based C# validator that handles both request types and both
-  languages.
-- File-based C# scripts for Azure invitations, GitHub organization
-  invitations, and initial service-principal setup.
-- GitHub Copilot license pre-check guidance and images in the GitHub
-  organization forms.
+- Separate workflows for Azure subscription and GitHub organization invitations.
+- A local file-based C# validator that handles both request types and both languages.
+- File-based C# scripts for Azure invitations, GitHub organization invitations, and initial service-principal setup.
+- GitHub Copilot license pre-check guidance and images in the GitHub organization forms.
 
 ## How the onboarding flow works
 
@@ -43,9 +36,7 @@ Issue opened
              +--> Comment, label, and close issue
 ```
 
-The workflows select a path from the issue title prefix. The validator accepts
-English or Korean field headings and normalizes valid request types to their
-English values before the workflow continues.
+The workflows select a path from the issue title prefix. The validator accepts English or Korean field headings and normalizes valid request types to their English values before the workflow continues.
 
 ## Prerequisites
 
@@ -57,13 +48,10 @@ Before using this template, configure:
 - The .NET 10 SDK for local development and validation.
 - Azure CLI (`az`) for Azure setup and invitation operations.
 - GitHub CLI (`gh`) for repository configuration and GitHub API operations.
-- An Azure service principal with the permissions required by the Azure
-  invitation workflow.
+- An Azure service principal with the permissions required by the Azure invitation workflow.
 - A GitHub App installed in the target repository and organization.
 
-The GitHub App used by `invite-user-to-github.yml` must have the organization
-permission **Members: write**. Without it, the organization invitation will
-fail with HTTP 403.
+The GitHub App used by `invite-user-to-github.yml` must have the organization permission **Members: write**. Without it, the organization invitation will fail with HTTP 403.
 
 ## Configure a new repository from this template
 
@@ -74,10 +62,8 @@ fail with HTTP 403.
    - `.github/ISSUE_TEMPLATE/invitation-request-github-en.yml`
    - `.github/ISSUE_TEMPLATE/invitation-request-github-ko.yml`
    - the corresponding workflow files.
-3. Update the title prefixes consistently in the issue forms, workflows, and
-   `scripts/Validate-InvitationRequest.cs`.
-4. Replace the Copilot guidance and images if the target program has different
-   eligibility requirements.
+3. Update the title prefixes consistently in the issue forms, workflows, and `scripts/Validate-InvitationRequest.cs`.
+4. Replace the Copilot guidance and images if the target program has different eligibility requirements.
 5. Configure the repository variables and secrets described below.
 6. Run the validation commands locally before enabling real invitations.
 
@@ -100,14 +86,11 @@ Add this repository secret:
 | --- | --- |
 | `BOT_PRIVATE_KEY` | Private key for the GitHub App |
 
-The GitHub App must be installed on the repository. For the GitHub organization
-workflow, it must also be installed in the target organization with
-organization member write permission.
+The GitHub App must be installed on the repository. For the GitHub organization workflow, it must also be installed in the target organization with organization member write permission.
 
 ## Azure service-principal setup
 
-Authenticate to the target Azure subscription and authenticate `gh` to the
-target repository, then run:
+Authenticate to the target Azure subscription and authenticate `gh` to the target repository, then run:
 
 ```bash
 dotnet run --file ./scripts/Setup-ServicePrincipal.cs -- \
@@ -119,23 +102,15 @@ The setup script:
 
 - creates an Azure app registration and service principal;
 - configures GitHub Actions OIDC for the `main` branch;
-- grants the Microsoft Graph permissions required by the Azure invitation
-  workflow;
+- grants the Microsoft Graph permissions required by the Azure invitation workflow;
 - assigns the Contributor role on the subscription; and
 - writes the Azure repository variables with `gh`.
 
-Review these permissions for your environment before running the script. Use
-the smallest scope and role that supports the operations you need.
+Review these permissions for your environment before running the script. Use the smallest scope and role that supports the operations you need.
 
 ## Local validation
 
-Validate all YAML files:
-
-```bash
-for file in .github/ISSUE_TEMPLATE/*.yml .github/workflows/*.yml; do
-  ruby -ryaml -e 'YAML.parse_file(ARGV[0])' "$file"
-done
-```
+The issue forms and workflows are YAML. The `redhat.vscode-yaml` extension included in the dev container validates them as you edit, and GitHub validates both on push, so no extra runtime is needed for a syntax check.
 
 Run the validator against an issue payload:
 
@@ -149,9 +124,7 @@ dotnet run --file ./scripts/Validate-InvitationRequest.cs -- \
   --github-output ./github-output
 ```
 
-Use a mock payload when testing locally. Do not run invitation scripts against
-production Azure or GitHub resources until the configuration and permissions
-have been reviewed.
+Use a mock payload when testing locally. Do not run invitation scripts against production Azure or GitHub resources until the configuration and permissions have been reviewed.
 
 ## Repository layout
 
@@ -168,17 +141,12 @@ have been reviewed.
 
 ## Security and operational notes
 
-- Treat `BOT_PRIVATE_KEY` as a production credential and rotate it according
-  to your organization's policy.
+- Treat `BOT_PRIVATE_KEY` as a production credential and rotate it according to your organization's policy.
 - Keep the Azure service principal and GitHub App permissions narrowly scoped.
 - Review workflow changes carefully because they can send real invitations.
-- Test with a dedicated organization, subscription, or controlled account
-  before enabling the template for a larger program.
-- The issue body is untrusted input. Preserve the existing environment-variable
-  handoff to the validator rather than interpolating issue content into shell
-  source.
-- The default issue forms include a GitHub Copilot license pre-check. Remove or
-  customize that section if it is not part of your program's eligibility rules.
+- Test with a dedicated organization, subscription, or controlled account before enabling the template for a larger program.
+- The issue body is untrusted input. Preserve the existing environment-variable handoff to the validator rather than interpolating issue content into shell source.
+- The default issue forms include a GitHub Copilot license pre-check. Remove or customize that section if it is not part of your program's eligibility rules.
 
 ## Customization checklist
 
