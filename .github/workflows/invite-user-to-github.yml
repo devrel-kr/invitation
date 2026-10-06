@@ -139,10 +139,12 @@ jobs:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
           ORGANIZATION: ${{ steps.issue.outputs.org }}
           GITHUB_HANDLE: ${{ steps.issue.outputs.githubHandle }}
+          TEAM_ID: ${{ vars.GITHUB_TEAM_ID }}
         run: |
           dotnet run --file ./scripts/Invite-ToGitHub.cs -- \
             --organization "$ORGANIZATION" \
-            --github-handle "$GITHUB_HANDLE"
+            --github-handle "$GITHUB_HANDLE" \
+            --team-id "$TEAM_ID"
 
       - name: Add label - Complete
         if: |

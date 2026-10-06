@@ -50,9 +50,15 @@ if (!userDocument.RootElement.TryGetProperty("id", out var idElement) ||
 }
 
 Console.WriteLine(
-    $"Inviting GitHub user '{handle}' ({userId}) to organization '{options.Organization}'...");
+    $"Inviting GitHub user '{handle}' ({userId}) to organization '{options.Organization}' " +
+    $"and team '{options.TeamId}'...");
 using var invitationBody = new StringContent(
-    JsonSerializer.Serialize(new { invitee_id = userId, role = "direct_member" }),
+    JsonSerializer.Serialize(new
+    {
+        invitee_id = userId,
+        role = "direct_member",
+        team_ids = new[] { options.TeamId }
+    }),
     Encoding.UTF8,
     "application/json");
 using var invitationResponse = await client.PostAsync(
@@ -66,14 +72,25 @@ if (!invitationResponse.IsSuccessStatusCode)
         invitationContent);
 }
 
-Console.WriteLine($"User '{handle}' invited to organization '{options.Organization}' successfully.");
+Console.WriteLine(
+    $"User '{handle}' invited to organization '{options.Organization}' and team " +
+    $"'{options.TeamId}' successfully.");
 
-sealed record Arguments(string Organization, string GitHubHandle)
+sealed record Arguments(string Organization, string GitHubHandle, long TeamId)
 {
     public static Arguments Parse(string[] args)
     {
         var values = ParseValues(args);
-        return new Arguments(Required("--organization"), Required("--github-handle"));
+        var teamIdValue = Required("--team-id");
+        if (!long.TryParse(teamIdValue, out var teamId) || teamId <= 0)
+        {
+            throw new ArgumentException("--team-id must be a positive integer.");
+        }
+
+        return new Arguments(
+            Required("--organization"),
+            Required("--github-handle"),
+            teamId);
 
         string Required(string name) =>
             values.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value)

@@ -66,9 +66,10 @@ The workflows use the following GitHub Actions configuration:
 | `AZURE_TENANT_ID` | Variable | Azure workflow | Selects the Microsoft Entra tenant where users are invited |
 | `AZURE_SUBSCRIPTION_ID` | Variable | Azure workflow | Selects the Azure subscription associated with the workflow identity |
 | `AZURE_SECURITY_GROUP` | Variable | Azure workflow | Identifies the group to which invited users are added |
+| `GITHUB_TEAM_ID` | Variable | GitHub workflow | Identifies the mandatory team to which invited organization members are added |
 | `INVITATION_DUE_DATE` | Variable | Both workflows | Rejects requests submitted after the program deadline |
 
-See [Configuration guide](docs/configuration.md) for instructions to create the GitHub App and Azure workload identity, set every variable and secret, understand the required permissions, and verify the configuration.
+See [Configuration guide](docs/configuration.md) for instructions to create the GitHub App, GitHub team, Azure workload identity, and Microsoft Entra security group; set every variable and secret; understand the required permissions; and verify the configuration.
 
 ## Azure service-principal setup
 
@@ -118,6 +119,9 @@ Use a mock payload when testing locally. Do not run invitation scripts against p
 | `scripts/Validate-InvitationRequest.cs` | Shared request validator |
 | `scripts/Invite-ToAzure.cs` | Azure tenant invitation and group membership |
 | `scripts/Invite-ToGitHub.cs` | GitHub organization invitation |
+| `scripts/Setup-GitHubApp.cs` | GitHub App manifest registration and credential setup |
+| `scripts/Setup-GitHubTeam.cs` | Idempotent GitHub team and repository-variable setup |
+| `scripts/Setup-EntraSecurityGroup.cs` | Idempotent Entra security group and repository-variable setup |
 | `scripts/Setup-ServicePrincipal.cs` | Azure OIDC and repository-variable setup |
 | `images/` | Images used by the GitHub Copilot pre-check guidance |
 
@@ -139,6 +143,7 @@ When adapting this repository, review all of the following:
 - allowed email domains in `Validate-InvitationRequest.cs`;
 - invitation deadline and time zone;
 - Azure security group;
+- GitHub onboarding team;
 - GitHub App permissions and installation;
 - Azure service-principal permissions and scope;
 - completion and invalid-request messages;
