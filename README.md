@@ -29,7 +29,7 @@ Create your repository with [![Use this template](https://img.shields.io/badge/U
 ## How the onboarding flow works
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[Applicant submits an issue form] --> B[Issue opened]
     B --> C{Request title prefix}
 
