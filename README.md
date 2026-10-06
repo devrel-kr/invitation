@@ -30,24 +30,15 @@ Create your repository with [![Use this template](https://img.shields.io/badge/U
 
 ```mermaid
 flowchart LR
-    A[Applicant submits an issue form] --> B[Issue opened]
-    B --> C{Request title prefix}
+    A[Issue opened with issue form]
 
-    C -->|Azure subscription| D[invite-user-to-azure.yml]
-    C -->|GitHub organization| E[invite-user-to-github.yml]
+    A --> B[invite-user-to-azure.yml]
+    B --> C[Validate-InvitationRequest.cs]
+    C --> D[Invite-ToAzure.cs]
 
-    D --> F[Validate-InvitationRequest.cs]
-    E --> F
-    F --> G{Request valid?}
-
-    G -->|No| H[Comment with validation errors]
-    H --> I[Apply invalid label and close issue]
-
-    G -->|Yes| J{Onboarding target}
-    J -->|Azure| K[Invite-ToAzure.cs]
-    J -->|GitHub| L[Invite-ToGitHubOrg.cs]
-    K --> M[Comment, apply complete label, and close issue]
-    L --> M
+    A --> E[invite-user-to-github.yml]
+    E --> F[Validate-InvitationRequest.cs]
+    F --> G[Invite-ToGitHubOrg.cs]
 ```
 
 ## Configure a new repository from this template
