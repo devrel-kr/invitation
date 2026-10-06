@@ -1,7 +1,5 @@
 # Onboarding to Azure and GitHub
 
-[![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea44f?logo=github&logoColor=white)](https://github.com/devrel-kr/invitation/generate)
-
 This repository is a reusable GitHub issue-form and Actions template for onboarding people to:
 
 - an Azure tenant, subscription, and security group; and
@@ -11,11 +9,22 @@ An applicant submits an issue form, the matching workflow validates the request,
 
 ## What this template includes
 
-- English and Korean issue forms for Azure and GitHub onboarding.
-- Separate workflows for Azure subscription and GitHub organization invitations.
-- A local file-based C# validator that handles both request types and both languages.
-- File-based C# scripts for Azure invitations, GitHub organization invitations, and initial service-principal setup.
-- GitHub Copilot license pre-check guidance and images in the GitHub organization forms.
+- Issue forms for Azure tenant and subscription, and GitHub organization onboarding.
+- Workflows for Azure tenant and subscription, and GitHub organization onboarding.
+- File-based C# scripts for Azure tenant and subscription, and GitHub organization onboarding.
+
+## Prerequisites
+
+- An active Azure tenant and subscription, if onboarding to Azure is required.
+- An active GitHub organization and GitHub Copilot license bound to the organization, if onboarding to GitHub is required.
+- [.NET 10+ SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Visual Studio 2026](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/) with [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- [GitHub CLI](https://cli.github.com)
+
+## Getting started
+
+Create your repository with [![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea44f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/devrel-kr/invitation/generate), then clone it locally.
 
 ## How the onboarding flow works
 
@@ -41,36 +50,18 @@ flowchart TD
     L --> M
 ```
 
-The workflows select a path from the issue title prefix. The validator accepts English or Korean field headings and normalizes valid request types to their English values before the workflow continues.
-
-## Prerequisites
-
-Before using this template, configure:
-
-- A public or private GitHub repository with Actions enabled.
-- An Azure subscription and tenant, if Azure onboarding is enabled.
-- A GitHub organization, if GitHub onboarding is enabled.
-- The .NET 10 SDK for local development and validation.
-- Azure CLI (`az`) for Azure setup and invitation operations.
-- GitHub CLI (`gh`) for repository configuration and GitHub API operations.
-- An Azure service principal with the permissions required by the Azure invitation workflow.
-- A GitHub App installed in the target repository and organization.
-
-The GitHub App used by `invite-user-to-github.yml` must have the organization permission **Members: write**. Without it, the organization invitation will fail with HTTP 403.
-
 ## Configure a new repository from this template
 
-1. Create a repository from this repository's template.
-2. Update the organization names in:
+1. Update the organization names in:
    - `.github/ISSUE_TEMPLATE/invitation-request-azure-en.yml`
    - `.github/ISSUE_TEMPLATE/invitation-request-azure-ko.yml`
    - `.github/ISSUE_TEMPLATE/invitation-request-github-en.yml`
    - `.github/ISSUE_TEMPLATE/invitation-request-github-ko.yml`
    - the corresponding workflow files.
-3. Update the title prefixes consistently in the issue forms, workflows, and `scripts/Validate-InvitationRequest.cs`.
-4. Replace the Copilot guidance and images if the target program has different eligibility requirements.
-5. Configure the repository variables and secrets described below.
-6. Run the validation commands locally before enabling real invitations.
+1. Update the title prefixes consistently in the issue forms, workflows, and `scripts/Validate-InvitationRequest.cs`.
+1. Replace the Copilot guidance and images if the target program has different eligibility requirements.
+1. Configure the repository variables and secrets described below.
+1. Run the validation commands locally before enabling real invitations.
 
 ## GitHub configuration
 
