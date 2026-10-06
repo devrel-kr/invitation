@@ -19,23 +19,26 @@ An applicant submits an issue form, the matching workflow validates the request,
 
 ## How the onboarding flow works
 
-```text
-Issue form
-    |
-    v
-Issue opened
-    |
-    +--> invite-user-to-azure.yml
-    |        |
-    |        +--> Validate-InvitationRequest.cs
-    |        +--> Invite-ToAzure.cs
-    |        +--> Comment, label, and close issue
-    |
-    +--> invite-user-to-github.yml
-             |
-             +--> Validate-InvitationRequest.cs
-             +--> Invite-ToGitHubOrg.cs
-             +--> Comment, label, and close issue
+```mermaid
+flowchart TD
+    A[Applicant submits an issue form] --> B[Issue opened]
+    B --> C{Request title prefix}
+
+    C -->|Azure subscription| D[invite-user-to-azure.yml]
+    C -->|GitHub organization| E[invite-user-to-github.yml]
+
+    D --> F[Validate-InvitationRequest.cs]
+    E --> F
+    F --> G{Request valid?}
+
+    G -->|No| H[Comment with validation errors]
+    H --> I[Apply invalid label and close issue]
+
+    G -->|Yes| J{Onboarding target}
+    J -->|Azure| K[Invite-ToAzure.cs]
+    J -->|GitHub| L[Invite-ToGitHubOrg.cs]
+    K --> M[Comment, apply complete label, and close issue]
+    L --> M
 ```
 
 The workflows select a path from the issue title prefix. The validator accepts English or Korean field headings and normalizes valid request types to their English values before the workflow continues.
