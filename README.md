@@ -38,7 +38,7 @@ flowchart LR
 
     A --> E[invite-user-to-github.yml]
     E --> F[Validate-InvitationRequest.cs]
-    F --> G[Invite-ToGitHubOrg.cs]
+    F --> G[Invite-ToGitHub.cs]
 ```
 
 ## Configure a new repository from this template
@@ -117,7 +117,7 @@ Use a mock payload when testing locally. Do not run invitation scripts against p
 | `.github/workflows/invite-user-to-github.yml` | GitHub organization invitation workflow |
 | `scripts/Validate-InvitationRequest.cs` | Shared request validator |
 | `scripts/Invite-ToAzure.cs` | Azure tenant invitation and group membership |
-| `scripts/Invite-ToGitHubOrg.cs` | GitHub organization invitation |
+| `scripts/Invite-ToGitHub.cs` | GitHub organization invitation |
 | `scripts/Setup-ServicePrincipal.cs` | Azure OIDC and repository-variable setup |
 | `images/` | Images used by the GitHub Copilot pre-check guidance |
 

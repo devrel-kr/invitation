@@ -140,7 +140,7 @@ jobs:
           ORGANIZATION: ${{ steps.issue.outputs.org }}
           GITHUB_HANDLE: ${{ steps.issue.outputs.githubHandle }}
         run: |
-          dotnet run --file ./scripts/Invite-ToGitHubOrg.cs -- \
+          dotnet run --file ./scripts/Invite-ToGitHub.cs -- \
             --organization "$ORGANIZATION" \
             --github-handle "$GITHUB_HANDLE"
 

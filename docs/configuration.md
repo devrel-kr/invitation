@@ -29,7 +29,7 @@ The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN
    | --- | --- | --- |
    | Repository permissions → Contents | Read-only | Allows the generated token to access repository content |
    | Repository permissions → Issues | Read and write | Allows comments, labels, issue lookup, and issue closure |
-   | Organization permissions → Members | Read and write | Allows `Invite-ToGitHubOrg.cs` to invite organization members |
+   | Organization permissions → Members | Read and write | Allows `Invite-ToGitHub.cs` to invite organization members |
 
 5. Create the app, then copy its **App ID**.
 6. Under **Private keys**, select **Generate a private key** and securely save the downloaded PEM file.
