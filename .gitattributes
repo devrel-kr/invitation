@@ -1,1 +1,12 @@
-.github/workflows/*.lock.yml linguist-generated=true merge=ours
+* text=auto eol=lf
+
+*.cs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.jpg binary
+*.jpeg binary
+*.png binary

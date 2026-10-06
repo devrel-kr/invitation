@@ -2,8 +2,8 @@
 
 ## Install additional apt packages
 sudo apt-get update && \
-    sudo apt upgrade -y && \
-    sudo apt-get install -y dos2unix libsecret-1-0 xdg-utils fonts-naver-d2coding && \
+    # sudo apt upgrade -y && \
+    sudo apt-get install -y --no-install-recommends dos2unix libsecret-1-0 xdg-utils && \
     sudo apt-get clean -y && \
     sudo rm -rf /var/lib/apt/lists/*
 
@@ -12,23 +12,14 @@ echo Configure git
 git config --global pull.rebase false
 git config --global core.autocrlf input
 
-## Install .NET dev certs
-# echo Install .NET dev certs
-# dotnet dev-certs https --trust
-
-# Install gh-aw extension for GitHub CLI
-echo Install gh-aw extension for GitHub CLI
-curl -sL https://raw.githubusercontent.com/github/gh-aw/main/install-gh-aw.sh | bash
-# gh extension install github/gh-aw
-
 # D2Coding Nerd Font
-echo Install D2Coding Nerd Font
-mkdir $HOME/.local
-mkdir $HOME/.local/share
-mkdir $HOME/.local/share/fonts
-wget https://github.com/ryanoasis/nerd-fonts/releases/latest/download/D2Coding.zip
-unzip D2Coding.zip -d $HOME/.local/share/fonts
-rm D2Coding.zip
+# echo Install D2Coding Nerd Font
+# mkdir -p $HOME/.local
+# mkdir -p $HOME/.local/share
+# mkdir -p $HOME/.local/share/fonts
+# wget https://github.com/ryanoasis/nerd-fonts/releases/latest/download/D2Coding.zip
+# unzip D2Coding.zip -d $HOME/.local/share/fonts
+# rm D2Coding.zip
 
 ## OH-MY-POSH ##
 echo Install oh-my-posh

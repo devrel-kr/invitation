@@ -1,4 +1,4 @@
-name: "Workflow: User Invitation to Azure Subscription"
+name: "Workflow: User Invitation to GitHub Organization"
 
 on:
   issues:
@@ -12,18 +12,16 @@ on:
 
 permissions:
   contents: read
-  id-token: write
   issues: write
-  pull-requests: write
 
 jobs:
   invite_user:
-    name: "Invite User to Azure Subscription"
+    name: "Invite User to GitHub Organization"
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[Azure subscription invitation request]') ||
-      startsWith(github.event.issue.title, '[Azure 구독 초대 요청]')
+      startsWith(github.event.issue.title, '[GitHub organization invitation request]') ||
+      startsWith(github.event.issue.title, '[GitHub 조직 초대 요청]')
 
     runs-on: ubuntu-latest
 
@@ -38,6 +36,7 @@ jobs:
           repositories: invitation
           permission-contents: read
           permission-issues: write
+          permission-members: write
 
       - name: Check event payload - from issue
         if: |
@@ -66,18 +65,18 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Validate Azure subscription request
+      - name: Validate GitHub organization request
         id: issue
         shell: bash
         env:
           DUE_DATE: ${{ vars.INVITATION_DUE_DATE }}
         run: |
           dotnet run --file ./scripts/Validate-InvitationRequest.cs -- \
-            --request-type azure \
+            --request-type github \
             --input "${{ github.workspace }}/payload.json" \
             --output "${{ github.workspace }}/issue.json" \
             --due-date "$DUE_DATE" \
-            --organization "devrelkorea.org" \
+            --organization "devrel-kr" \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Comment to issue - Acknowledge
@@ -90,9 +89,9 @@ jobs:
           body: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            Your issue is being reviewed. We will notify you again once we confirm whether it is complete.
+            We have received your GitHub organization invitation request and are reviewing it.
 
-      - name: Add a label - Invalid
+      - name: Add label - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
@@ -117,7 +116,7 @@ jobs:
             - Submitted at: ${{ steps.issue.outputs.submittedAt }}
             - Due by: ${{ steps.issue.outputs.dueBy }}
 
-            Your request is not valid for the following reasons:
+            Your GitHub organization invitation request is not valid for the following reasons:
 
             ${{ steps.issue.outputs.invalidReasons }}
 
@@ -132,59 +131,46 @@ jobs:
             -c "The submitted request is invalid. Closing this issue." \
             -R ${{ github.event.repository.full_name }}
 
-      - name: Sign in to Azure
+      - name: Invite user to GitHub organization
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
-        uses: azure/login@v3
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Invite user to Azure tenant
-        if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          INVITEE_EMAIL: ${{ steps.issue.outputs.email }}
-          INVITEE_NAME: ${{ steps.issue.outputs.name }}
-          SECURITY_GROUP: ${{ vars.AZURE_SECURITY_GROUP }}
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          ORGANIZATION: ${{ steps.issue.outputs.org }}
+          GITHUB_HANDLE: ${{ steps.issue.outputs.githubHandle }}
+          TEAM_ID: ${{ vars.GITHUB_TEAM_ID }}
         run: |
-          dotnet run --file ./scripts/Invite-ToAzure.cs -- \
-            --email "$INVITEE_EMAIL" \
-            --name "$INVITEE_NAME" \
-            --security-group "$SECURITY_GROUP"
+          dotnet run --file ./scripts/Invite-ToGitHub.cs -- \
+            --organization "$ORGANIZATION" \
+            --github-handle "$GITHUB_HANDLE" \
+            --team-id "$TEAM_ID"
 
       - name: Add label - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
-          --add-label "complete" \
-          -R ${{ github.event.repository.full_name }}
+            --add-label "complete" \
+            -R ${{ github.event.repository.full_name }}
 
       - name: Remove label - request
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
-          --remove-label "request" \
-          -R ${{ github.event.repository.full_name }}
+            --remove-label "request" \
+            -R ${{ github.event.repository.full_name }}
 
       - name: Comment to issue - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.isValid == 'true'
         uses: actions-cool/issues-helper@v3
         with:
           actions: "create-comment"
@@ -194,16 +180,15 @@ jobs:
           body: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            An invitation has been sent to the email address you provided. After accepting the invitation, you can join the subscription.
+            A GitHub organization invitation has been sent to your account. After accepting the invitation, you can join the organization. Thank you!
 
       - name: Close issue - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "The invitation request is complete. Closing this issue." \
+            -c "The GitHub organization invitation request is complete. Closing this issue." \
             -R ${{ github.event.repository.full_name }}
