@@ -69,8 +69,8 @@ The workflows use the following GitHub Actions configuration:
 
 | Name | Type | Used by | Why it is needed |
 | --- | --- | --- | --- |
-| `BOT_APP_ID` | Variable | Both workflows | Identifies the GitHub App that manages request issues and, for GitHub onboarding, sends organization invitations |
-| `BOT_PRIVATE_KEY` | Secret | Both workflows | Authenticates the workflow as the GitHub App without storing a long-lived access token |
+| `APP_CLIENT_ID` | Variable | Both workflows | Identifies the GitHub App that manages request issues and, for GitHub onboarding, sends organization invitations |
+| `APP_PRIVATE_KEY` | Secret | Both workflows | Authenticates the workflow as the GitHub App without storing a long-lived access token |
 | `AZURE_CLIENT_ID` | Variable | Azure workflow | Identifies the Microsoft Entra application used for GitHub Actions OIDC sign-in |
 | `AZURE_TENANT_ID` | Variable | Azure workflow | Selects the Microsoft Entra tenant where users are invited |
 | `AZURE_SUBSCRIPTION_ID` | Variable | Azure workflow | Selects the Azure subscription associated with the workflow identity |
@@ -136,7 +136,7 @@ Use a mock payload when testing locally. Do not run invitation scripts against p
 
 ## Security and operational notes
 
-- Treat `BOT_PRIVATE_KEY` as a production credential and rotate it according to your organization's policy.
+- Treat `APP_PRIVATE_KEY` as a production credential and rotate it according to your organization's policy.
 - Keep the Azure service principal and GitHub App permissions narrowly scoped.
 - Review workflow changes carefully because they can send real invitations.
 - Test with a dedicated organization, subscription, or controlled account before enabling the template for a larger program.

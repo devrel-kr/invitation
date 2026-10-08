@@ -20,10 +20,8 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[GitHub organization onboarding request]') ||
-      startsWith(github.event.issue.title, '[GitHub 조직 온보딩 요청]') ||
-      startsWith(github.event.issue.title, '[GitHub organization invitation request]') ||
-      startsWith(github.event.issue.title, '[GitHub 조직 초대 요청]')
+      (startsWith(github.event.issue.title, '[GitHub organization onboarding request]') ||
+      startsWith(github.event.issue.title, '[GitHub 조직 온보딩 요청]'))
 
     runs-on: ubuntu-latest
 
@@ -32,8 +30,8 @@ jobs:
         id: bot-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: invitation
           permission-contents: read

@@ -83,7 +83,7 @@ if (!conversionResponse.IsSuccessStatusCode)
 }
 
 using var conversion = JsonDocument.Parse(conversionContent);
-var appId = RequiredInt64(conversion.RootElement, "id");
+var clientId = RequiredString(conversion.RootElement, "client_id");
 var slug = RequiredString(conversion.RootElement, "slug");
 var privateKey = RequiredString(conversion.RootElement, "pem");
 
@@ -91,20 +91,20 @@ Console.WriteLine($"Saving GitHub App credentials to repository '{options.GitHub
 await RunAsync(
     null,
     "gh",
-    "variable", "set", "BOT_APP_ID",
-    "--body", appId.ToString(),
+    "variable", "set", "APP_CLIENT_ID",
+    "--body", clientId,
     "--repo", options.GitHubRepo);
 await RunAsync(
     privateKey,
     "gh",
-    "secret", "set", "BOT_PRIVATE_KEY",
+    "secret", "set", "APP_PRIVATE_KEY",
     "--repo", options.GitHubRepo);
 
 var installationUrl = $"{githubWebUrl}/apps/{Uri.EscapeDataString(slug)}/installations/new";
 Console.WriteLine();
 Console.WriteLine($"GitHub App '{slug}' created successfully.");
-Console.WriteLine($"BOT_APP_ID saved to {options.GitHubRepo}.");
-Console.WriteLine($"BOT_PRIVATE_KEY saved to {options.GitHubRepo}.");
+Console.WriteLine($"APP_CLIENT_ID saved to {options.GitHubRepo}.");
+Console.WriteLine($"APP_PRIVATE_KEY saved to {options.GitHubRepo}.");
 Console.WriteLine("Install the app on the organization and grant it access to the repository:");
 Console.WriteLine(installationUrl);
 if (options.OpenBrowser)
@@ -215,17 +215,6 @@ static string RequiredString(JsonElement element, string propertyName)
     }
 
     return property.GetString()!;
-}
-
-static long RequiredInt64(JsonElement element, string propertyName)
-{
-    if (!element.TryGetProperty(propertyName, out var property) ||
-        !property.TryGetInt64(out var value))
-    {
-        throw new InvalidDataException($"Response did not contain numeric '{propertyName}'.");
-    }
-
-    return value;
 }
 
 static async Task<string> RunAsync(

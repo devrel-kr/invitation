@@ -8,8 +8,8 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 
 | Name | Type | Provisioning method |
 | --- | --- | --- |
-| `BOT_APP_ID` | Repository variable | Written by `Setup-GitHubApp.cs` |
-| `BOT_PRIVATE_KEY` | Repository secret | Written by `Setup-GitHubApp.cs` |
+| `APP_CLIENT_ID` | Repository variable | Written by `Setup-GitHubApp.cs` |
+| `APP_PRIVATE_KEY` | Repository secret | Written by `Setup-GitHubApp.cs` |
 | `AZURE_CLIENT_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
 | `AZURE_TENANT_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
 | `AZURE_SUBSCRIPTION_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
@@ -21,7 +21,7 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 
 The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on request issues, changes labels, closes completed requests, and sends GitHub organization invitations.
 
-`Setup-GitHubApp.cs` uses GitHub's [App Manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest). The script opens a browser for organization-owner approval, receives the temporary callback code on localhost, exchanges it for the App ID and one-time private key, and writes `BOT_APP_ID` and `BOT_PRIVATE_KEY` to the repository.
+`Setup-GitHubApp.cs` uses GitHub's [App Manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest). The script opens a browser for organization-owner approval, receives the temporary callback code on localhost, exchanges it for the App client ID and one-time private key, and writes `APP_CLIENT_ID` and `APP_PRIVATE_KEY` to the repository.
 
 Authenticate `gh`, then run:
 
