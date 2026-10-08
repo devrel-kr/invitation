@@ -72,13 +72,18 @@ jobs:
           DUE_DATE: ${{ vars.ONBOARDING_DUE_DATE }}
           EXPECTED_ORGANIZATION: ${{ github.repository_owner }}
         run: |
+          due_date_args=()
+          if [[ -n "$DUE_DATE" ]]; then
+            due_date_args+=(--due-date "$DUE_DATE")
+          fi
+
           dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
             --request-type github \
             --input "${{ github.workspace }}/payload.json" \
             --output "${{ github.workspace }}/issue.json" \
-            --due-date "$DUE_DATE" \
             --organization "$EXPECTED_ORGANIZATION" \
-            --github-output "$GITHUB_OUTPUT"
+            --github-output "$GITHUB_OUTPUT" \
+            "${due_date_args[@]}"
 
       - name: Comment to issue - Acknowledge
         shell: bash
@@ -122,7 +127,7 @@ jobs:
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
             - Submitted at: ${{ steps.issue.outputs.submittedAt }}
-            - Due by: ${{ steps.issue.outputs.dueBy }}
+            ${{ steps.issue.outputs.dueBy && format('- Due by: {0}', steps.issue.outputs.dueBy) }}
 
             Your GitHub organization onboarding request is not valid for the following reasons:
 

@@ -16,7 +16,7 @@ var body = options.RequestType switch
     _ => throw new InvalidOperationException($"Unsupported request type: {options.RequestType}")
 };
 
-if (issue.CreatedAt > options.DueDate)
+if (options.DueDate is { } cutoff && issue.CreatedAt > cutoff)
 {
     body.InvalidReasons.Add("The submission deadline has passed.");
 }
@@ -32,7 +32,7 @@ if (!string.IsNullOrWhiteSpace(body.GitHubHandle) &&
 var result = new ValidationResult(
     issue.Number,
     ToKoreaTime(issue.CreatedAt),
-    ToKoreaTime(options.DueDate),
+    options.DueDate is { } configuredDueDate ? ToKoreaTime(configuredDueDate) : null,
     issue.CreatedBy,
     body.InvalidReasons.Count == 0,
     body.InvalidReasons,
@@ -167,14 +167,19 @@ static void WriteGitHubOutputs(string path, ValidationResult result)
     var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Seoul");
     var submittedAt = TimeZoneInfo.ConvertTime(result.CreatedAt, timeZone)
         .ToString("yyyy-MM-dd HH:mm:ss.fff '+09:00'", CultureInfo.InvariantCulture);
-    var dueBy = TimeZoneInfo.ConvertTime(result.DueDate, timeZone)
-        .ToString("yyyy-MM-dd HH:mm:ss.fff '+09:00'", CultureInfo.InvariantCulture);
+    var dueBy = result.DueDate is { } dueDate
+        ? TimeZoneInfo.ConvertTime(dueDate, timeZone)
+            .ToString("yyyy-MM-dd HH:mm:ss.fff '+09:00'", CultureInfo.InvariantCulture)
+        : null;
     var invalidReasons = $"<ul><li> {string.Join("</li><li> ", result.InvalidReasons)}</li></ul>";
 
     using var writer = File.AppendText(path);
     WriteOutput(writer, "issueNumber", result.Number.ToString(CultureInfo.InvariantCulture));
     WriteOutput(writer, "submittedAt", submittedAt);
-    WriteOutput(writer, "dueBy", dueBy);
+    if (dueBy is not null)
+    {
+        WriteOutput(writer, "dueBy", dueBy);
+    }
     WriteOutput(writer, "isValid", result.IsValid.ToString().ToLowerInvariant());
     WriteOutput(writer, "invalidReasons", invalidReasons);
     WriteOutput(writer, "org", result.Body.Organisation);
@@ -201,7 +206,7 @@ sealed record Arguments(
     RequestType RequestType,
     string InputFile,
     string OutputFile,
-    DateTimeOffset DueDate,
+    DateTimeOffset? DueDate,
     string Organization,
     string? GitHubOutput)
 {
@@ -226,13 +231,20 @@ sealed record Arguments(
             var value => throw new ArgumentException($"Unsupported request type: {value}")
         };
 
-        if (!DateTimeOffset.TryParse(
-                Required("--due-date"),
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind,
-                out var dueDate))
+        DateTimeOffset? dueDate = null;
+        if (values.TryGetValue("--due-date", out var dueDateValue) &&
+            !string.IsNullOrWhiteSpace(dueDateValue))
         {
-            throw new ArgumentException("--due-date must be a valid ISO-8601 DateTimeOffset.");
+            if (!DateTimeOffset.TryParse(
+                    dueDateValue,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind,
+                    out var parsedDueDate))
+            {
+                throw new ArgumentException("--due-date must be a valid ISO-8601 DateTimeOffset.");
+            }
+
+            dueDate = parsedDueDate;
         }
 
         return new Arguments(
@@ -301,7 +313,7 @@ sealed record OnboardingBody(
 sealed record ValidationResult(
     int Number,
     DateTimeOffset CreatedAt,
-    DateTimeOffset DueDate,
+    DateTimeOffset? DueDate,
     string CreatedBy,
     bool IsValid,
     IReadOnlyList<string> InvalidReasons,
@@ -312,11 +324,37 @@ static class ValidationConstants
     public static readonly HashSet<string> AllowedEmailDomains =
         new(StringComparer.OrdinalIgnoreCase)
         {
+            "126.com",
+            "163.com",
+            "aol.com",
+            "daum.net",
+            "fastmail.com",
             "gmail.com",
+            "gmx.com",
+            "googlemail.com",
+            "hanmail.net",
+            "hotmail.com",
+            "icloud.com",
+            "kakao.com",
+            "live.com",
+            "mac.com",
+            "mail.com",
+            "me.com",
+            "msn.com",
+            "naver.com",
             "outlook.com",
             "outlook.kr",
-            "hotmail.com",
-            "naver.com",
-            "kakao.com"
+            "proton.me",
+            "protonmail.com",
+            "qq.com",
+            "t-online.de",
+            "tuta.com",
+            "tutanota.com",
+            "web.de",
+            "yahoo.co.jp",
+            "yahoo.co.uk",
+            "yahoo.com",
+            "yandex.com",
+            "yandex.ru"
         };
 }

@@ -29,7 +29,7 @@ body:
     attributes:
       label: 조직
       options:
-        - {{ENTRA_TENANT_DOMAIN_NAME}}
+        - "{{ENTRA_TENANT_DOMAIN_NAME}}"
     validations:
       required: true
 

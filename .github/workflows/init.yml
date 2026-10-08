@@ -1,0 +1,139 @@
+name: Initialize from template
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  initialize:
+    if: ${{ (github.event.created || github.event_name == 'workflow_dispatch') && github.ref_name == github.event.repository.default_branch && !github.event.repository.is_template }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    env:
+      REPOSITORY_OWNER: ${{ github.repository_owner }}
+      REPOSITORY_NAME: ${{ github.event.repository.name }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Replace repository placeholders
+        shell: pwsh
+        run: |
+          $workspace = (Get-Location).ProviderPath
+          $workflowPath = Join-Path $workspace ".github/workflows/init.yml"
+          $files = @(Join-Path $workspace "README.md")
+          foreach ($directory in @(
+              ".github/ISSUE_TEMPLATE",
+              ".github/workflows",
+              ".github/bootstrap-issues",
+              "docs",
+              "scripts"
+          )) {
+            $files += @(Get-ChildItem -LiteralPath $directory -File -Recurse |
+              ForEach-Object { $_.FullName })
+          }
+
+          foreach ($file in $files) {
+            $fullPath = [IO.Path]::GetFullPath($file)
+            # Keep the initializer's own replacement tokens intact until it removes itself.
+            if ($fullPath -eq $workflowPath) {
+              continue
+            }
+
+            $content = [IO.File]::ReadAllText($fullPath)
+            $updated = $content.Replace("{{ORG_NAME}}", $env:REPOSITORY_OWNER).Replace(
+              "{{REPOSITORY_NAME}}",
+              $env:REPOSITORY_NAME
+            )
+            if ($updated -cne $content) {
+              [IO.File]::WriteAllText(
+                $fullPath,
+                $updated,
+                [Text.UTF8Encoding]::new($false)
+              )
+            }
+          }
+
+      - name: Create labels used by onboarding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          existing_labels="$(gh label list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 1000 \
+            --json name \
+            --jq '.[].name')"
+
+          while IFS='|' read -r name color description; do
+            if grep -Fxiq -- "$name" <<< "$existing_labels"; then
+              echo "Keeping existing label: $name"
+              continue
+            fi
+
+            gh label create "$name" \
+              --color "$color" \
+              --description "$description" \
+              --repo "$GITHUB_REPOSITORY"
+          done <<'LABELS'
+          onboarding|0075ca|Requests to onboard a user to Azure or GitHub
+          request|d876e3|Pending request
+          invalid|e4e669|This doesn't seem right
+          complete|0e8a16|Request completed
+          LABELS
+
+      - name: Create bootstrap issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          export LC_ALL=C
+
+          files=(.github/bootstrap-issues/*.md)
+          if (( ${#files[@]} == 0 )); then
+            echo "::error::No bootstrap issue files were found."
+            exit 1
+          fi
+
+          existing_bodies="$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/issues?state=all&per_page=100" \
+            --jq '.[] | select(.pull_request == null) | (.body // "")')"
+          body_file="$RUNNER_TEMP/bootstrap-issue-body.md"
+
+          for file in "${files[@]}"; do
+            title_line="$(head -n 1 "$file")"
+            if [[ "$title_line" != "# "* ]]; then
+              echo "::error file=$file::The first line must be a Markdown heading."
+              exit 1
+            fi
+
+            title="${title_line#\# }"
+            marker="<!-- onboarding-template-bootstrap:${file##*/} -->"
+            if [[ "$existing_bodies" == *"$marker"* ]]; then
+              echo "Skipping existing bootstrap issue: $title"
+              continue
+            fi
+
+            tail -n +2 "$file" > "$body_file"
+            printf '\n%s\n' "$marker" >> "$body_file"
+            gh issue create \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$title" \
+              --body-file "$body_file"
+          done
+
+      - name: Remove initializer and commit setup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -r -f .github/workflows/init.yml .github/bootstrap-issues
+          git add --all
+          git commit -m "chore: initialize repository from template"
+          git push

@@ -15,9 +15,23 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 | `AZURE_SUBSCRIPTION_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
 | `AZURE_SECURITY_GROUP_ID` | Repository variable | Written by `Setup-EntraSecurityGroup.cs` |
 | `GITHUB_TEAM_ID` | Repository variable | Written by `Setup-GitHubTeam.cs` |
-| `ONBOARDING_DUE_DATE` | Repository variable | Set manually as an ISO 8601 timestamp |
+| `ONBOARDING_DUE_DATE` | Optional repository variable | Set an ISO 8601 timestamp to enforce a deadline; leave unset for ongoing onboarding |
+
+## Initialize a repository from this template
+
+When a repository is created from this template, `.github/workflows/init.yml` runs on the initial default-branch creation event. It skips the template repository and runs only on the generated repository's default branch. The initializer:
+
+- replaces repository-owner and repository-name placeholders in the README, configuration documentation, issue forms, onboarding workflows, C# scripts, and bootstrap issue bodies;
+- creates the numbered setup issues from `.github/bootstrap-issues` in order; and
+- commits the personalized files, then removes `init.yml` and the bootstrap issue source files.
+
+The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities or configure repository variables or secrets. Complete the generated issues in order before accepting onboarding requests.
+
+The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 3. See the matching section below and complete it before accepting Azure onboarding requests.
 
 ## Create the GitHub App
+
+**Bootstrap issue 1/4**
 
 The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on onboarding issues, changes labels, closes completed requests, and manages GitHub organization membership.
 
@@ -26,12 +40,23 @@ The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN
 Authenticate `gh`, then run:
 
 ```bash
+# zsh/bash
 gh auth login
 
 dotnet run --file ./scripts/Setup-GitHubApp.cs -- \
   --app-name "onboarding-automation" \
-  --github-org "OWNER" \
-  --github-repo "OWNER/REPOSITORY"
+  --github-org "{{ORG_NAME}}" \
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+gh auth login
+
+dotnet run --file ./scripts/Setup-GitHubApp.cs -- `
+  --app-name "onboarding-automation" `
+  --github-org "{{ORG_NAME}}" `
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
 The script listens on `http://127.0.0.1:53682/` for up to 10 minutes. On a local machine, it registers a loopback callback URL with GitHub, so run the script on the same machine as the browser.
@@ -54,22 +79,37 @@ The organization must own or install the app for the organization-level `Members
 
 ## Create the GitHub onboarding team
 
+**Bootstrap issue 2/4**
+
 GitHub organization onboarding assigns each new member to a team. `Setup-GitHubTeam.cs` searches all visible organization teams for an exact name match, reuses the existing team when found, or creates a new team when absent. It then writes the numeric team ID to `GITHUB_TEAM_ID`.
 
 The authenticated GitHub user must be an organization member allowed to create teams and must be able to write Actions variables in the repository. Organization owners can restrict team creation to owners.
 
 ```bash
+# zsh/bash
 dotnet run --file ./scripts/Setup-GitHubTeam.cs -- \
-  --github-org "OWNER" \
+  --github-org "{{ORG_NAME}}" \
   --team-name "onboarding-participants" \
   --description "Users onboarded by this workflow." \
   --privacy "closed" \
-  --github-repo "OWNER/REPOSITORY"
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+dotnet run --file ./scripts/Setup-GitHubTeam.cs -- `
+  --github-org "{{ORG_NAME}}" `
+  --team-name "onboarding-participants" `
+  --description "Users onboarded by this workflow." `
+  --privacy "closed" `
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
 The supported privacy values are `closed` and `secret`. On each successful onboarding, `Onboard-ToGitHub.cs` sends the configured team ID in the `team_ids` array, so GitHub adds the new member to that team after they complete the organization membership flow.
 
 ## Create the Azure workload identity
+
+**Bootstrap issue 3/4**
 
 The Azure workflow uses OpenID Connect (OIDC) to exchange GitHub's short-lived identity token for an Azure access token. It does not require an Azure client secret.
 
@@ -85,6 +125,10 @@ The included setup script creates:
 - the `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` repository variables.
 
 The Graph permissions allow the workflow to onboard an external user, find the configured group, and add the user to it. The Azure IDs tell `azure/login` which workload identity, tenant, and subscription to use.
+
+### Configure the expected Entra tenant domain
+
+The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both `.github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml` and `.github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml`, and set `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` to the same domain.
 
 ### Prerequisites
 
@@ -110,15 +154,23 @@ Before running the script:
 Run the setup script:
 
 ```bash
+# zsh/bash
 dotnet run --file ./scripts/Setup-ServicePrincipal.cs -- \
   --app-name "onboarding-automation" \
-  --github-repo "OWNER/REPOSITORY"
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+dotnet run --file ./scripts/Setup-ServicePrincipal.cs -- `
+  --app-name "onboarding-automation" `
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
 The federated credential created by the script trusts only:
 
 ```text
-repo:OWNER/REPOSITORY:ref:refs/heads/main
+repo:{{ORG_NAME}}/{{REPOSITORY_NAME}}:ref:refs/heads/main
 ```
 
 If the workflow runs from a different branch, update the `Branch` constant in `Setup-ServicePrincipal.cs` before running it, or create an additional federated credential with the required subject.
@@ -127,29 +179,62 @@ Review the generated permissions for your environment. In particular, the setup 
 
 ## Create the Azure security group
 
+**Bootstrap issue 4/4**
+
 `AZURE_SECURITY_GROUP_ID` identifies the Microsoft Entra security group that receives each onboarded user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the user as a member.
 
 `Setup-EntraSecurityGroup.cs` searches for an exact display-name match, reuses an existing security-enabled group, or creates a new security group. It fails when duplicate display names make the result ambiguous or when the existing group is not security-enabled. The script stores the group object ID in `AZURE_SECURITY_GROUP_ID`.
 
 ```bash
+# zsh/bash
 dotnet run --file ./scripts/Setup-EntraSecurityGroup.cs -- \
   --group-name "onboarding-participants" \
   --description "Users onboarded by this workflow." \
-  --github-repo "OWNER/REPOSITORY"
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+dotnet run --file ./scripts/Setup-EntraSecurityGroup.cs -- `
+  --group-name "onboarding-participants" `
+  --description "Users onboarded by this workflow." `
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
 The script derives a mail nickname from the display name. Use `--mail-nickname` to provide one explicitly. Use a dedicated group whose access assignments match the intended onboarding scope. The automation identity needs permission to read the group and update its membership.
 
-## Set the onboarding deadline
+### Optional onboarding deadline
 
-`ONBOARDING_DUE_DATE` is the last accepted submission time. Both workflows pass it to the shared validator, which rejects requests submitted after the deadline.
+`ONBOARDING_DUE_DATE` is optional. When set, it is the last accepted submission time, and both workflows pass it to the shared validator to reject later requests. When it is unset or empty, no submission deadline is enforced and invalid-request comments omit the due-date line. A non-empty value that is not a valid ISO 8601 timestamp causes validation to fail.
+
+For ongoing onboarding, leave the variable unset. To remove a previously configured deadline:
+
+```bash
+# zsh/bash
+gh variable delete ONBOARDING_DUE_DATE \
+  --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+gh variable delete ONBOARDING_DUE_DATE `
+  --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
 
 Use an ISO 8601 timestamp with an explicit UTC offset:
 
 ```bash
+# zsh/bash
 gh variable set ONBOARDING_DUE_DATE \
   --body "2026-12-31T23:59:59+09:00" \
-  --repo "OWNER/REPOSITORY"
+  --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+gh variable set ONBOARDING_DUE_DATE \
+  --body "2026-12-31T23:59:59+09:00" \
+  --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
 An explicit offset avoids interpreting the deadline in the runner's local time zone.
@@ -159,11 +244,11 @@ An explicit offset avoids interpreting the deadline in the runner's local time z
 List the configured variables and secret names:
 
 ```bash
-gh variable list --repo "OWNER/REPOSITORY"
-gh secret list --repo "OWNER/REPOSITORY"
+gh variable list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+gh secret list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
-Confirm that all eight names from the configuration overview are present. GitHub does not reveal secret values after they are stored.
+Confirm that all required values from the configuration overview are present. `ONBOARDING_DUE_DATE` is optional; it should be set only when you want requests to expire. GitHub does not reveal secret values after they are stored.
 
 Before accepting real requests:
 

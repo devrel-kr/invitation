@@ -40,7 +40,7 @@ body:
     attributes:
       label: 조직
       options:
-        - {{ORG_NAME}}
+        - "{{ORG_NAME}}"
     validations:
       required: true
 
