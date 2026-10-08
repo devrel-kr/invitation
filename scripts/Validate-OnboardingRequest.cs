@@ -37,7 +37,6 @@ var result = new ValidationResult(
     body.InvalidReasons.Count == 0,
     body.InvalidReasons,
     new InvitationBody(
-        body.RequestType,
         body.Organisation,
         body.GitHubHandle,
         body.Name,
@@ -98,10 +97,7 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
     }
 
     var githubHandle = profileUrl?.Replace("https://github.com/", "", StringComparison.Ordinal);
-    var normalizedRequestType = hasExpectedRequestType
-        ? "Azure subscription onboarding request"
-        : requestType;
-    return new ValidatedBody(normalizedRequestType, organisation, githubHandle, name, email, invalidReasons);
+    return new ValidatedBody(organisation, githubHandle, name, email, invalidReasons);
 }
 
 static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganization)
@@ -129,10 +125,7 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
         invalidReasons.Add("The GitHub handle is invalid.");
     }
 
-    var normalizedRequestType = hasExpectedRequestType
-        ? "GitHub organization onboarding request"
-        : requestType;
-    return new ValidatedBody(normalizedRequestType, organisation, githubHandle, null, null, invalidReasons);
+    return new ValidatedBody(organisation, githubHandle, null, null, invalidReasons);
 }
 
 static string? GetIssueFormValue(string body, params string[] labels)
@@ -199,7 +192,6 @@ static void WriteGitHubOutputs(string path, ValidationResult result)
 
     using var writer = File.AppendText(path);
     WriteOutput(writer, "issueNumber", result.Number.ToString(CultureInfo.InvariantCulture));
-    WriteOutput(writer, "requestType", result.Body.RequestType);
     WriteOutput(writer, "submittedAt", submittedAt);
     WriteOutput(writer, "dueBy", dueBy);
     WriteOutput(writer, "isValid", result.IsValid.ToString().ToLowerInvariant());
@@ -312,7 +304,6 @@ sealed record IssuePayload(int Number, string Body, DateTimeOffset CreatedAt, st
 }
 
 sealed record ValidatedBody(
-    string? RequestType,
     string? Organisation,
     string? GitHubHandle,
     string? Name,
@@ -320,7 +311,6 @@ sealed record ValidatedBody(
     List<string> InvalidReasons);
 
 sealed record InvitationBody(
-    string? RequestType,
     string? Organisation,
     [property: JsonPropertyName("githubHandle")]
     string? GitHubHandle,
