@@ -76,7 +76,7 @@ The workflows use the following GitHub Actions configuration:
 | `AZURE_SUBSCRIPTION_ID` | Variable | Azure workflow | Selects the Azure subscription associated with the workflow identity |
 | `AZURE_SECURITY_GROUP` | Variable | Azure workflow | Identifies the group to which invited users are added |
 | `GITHUB_TEAM_ID` | Variable | GitHub workflow | Identifies the mandatory team to which invited organization members are added |
-| `INVITATION_DUE_DATE` | Variable | Both workflows | Rejects requests submitted after the program deadline |
+| `ONBOARDING_DUE_DATE` | Variable | Both workflows | Rejects requests submitted after the program deadline |
 
 See [Configuration guide](docs/configuration.md) for instructions to create the GitHub App, GitHub team, Azure workload identity, and Microsoft Entra security group; set every variable and secret; understand the required permissions; and verify the configuration.
 

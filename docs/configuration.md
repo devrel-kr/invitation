@@ -15,7 +15,7 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 | `AZURE_SUBSCRIPTION_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
 | `AZURE_SECURITY_GROUP` | Repository variable | Written by `Setup-EntraSecurityGroup.cs` |
 | `GITHUB_TEAM_ID` | Repository variable | Written by `Setup-GitHubTeam.cs` |
-| `INVITATION_DUE_DATE` | Repository variable | Set manually as an ISO 8601 timestamp |
+| `ONBOARDING_DUE_DATE` | Repository variable | Set manually as an ISO 8601 timestamp |
 
 ## Create the GitHub App
 
@@ -140,12 +140,12 @@ The script derives a mail nickname from the display name. Use `--mail-nickname` 
 
 ## Set the invitation deadline
 
-`INVITATION_DUE_DATE` is the last accepted submission time. Both workflows pass it to the shared validator, which rejects requests submitted after the deadline.
+`ONBOARDING_DUE_DATE` is the last accepted submission time. Both workflows pass it to the shared validator, which rejects requests submitted after the deadline.
 
 Use an ISO 8601 timestamp with an explicit UTC offset:
 
 ```bash
-gh variable set INVITATION_DUE_DATE \
+gh variable set ONBOARDING_DUE_DATE \
   --body "2026-12-31T23:59:59+09:00" \
   --repo "OWNER/REPOSITORY"
 ```

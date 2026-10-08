@@ -71,7 +71,7 @@ jobs:
         id: issue
         shell: bash
         env:
-          DUE_DATE: ${{ vars.INVITATION_DUE_DATE }}
+          DUE_DATE: ${{ vars.ONBOARDING_DUE_DATE }}
         run: |
           dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
             --request-type github \
