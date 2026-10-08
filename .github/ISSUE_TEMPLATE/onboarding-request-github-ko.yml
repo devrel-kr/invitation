@@ -1,7 +1,7 @@
-name: GitHub 조직 초대 요청
-description: GitHub 조직에 초대를 요청하기 위한 이슈 템플릿입니다.
+name: GitHub 조직 온보딩 요청
+description: GitHub 조직에 온보딩을 요청하기 위한 이슈 템플릿입니다.
 
-title: "[GitHub 조직 초대 요청] "
+title: "[GitHub 조직 온보딩 요청] "
 
 labels:
   - invitation
@@ -20,18 +20,18 @@ body:
 
         아래 QR 코드를 스캔하거나 [github.com/settings/copilot/features](https://github.com/settings/copilot/features) 페이지를 직접 열면, 현재 로그인한 계정에 GitHub Copilot 라이선스가 연결되어 있는지 확인할 수 있습니다.
 
-        <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-check.png" alt="GitHub Copilot 설정 페이지로 연결되는 QR 코드" width="200" />
+        <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-check.png" alt="GitHub Copilot 설정 페이지로 연결되는 QR 코드" width="200" />
 
         해당 페이지를 연 뒤 화면을 아래로 스크롤하면 다음 세 가지 중 하나처럼 보여야 합니다. 그렇지 않다면 이미 Copilot 라이선스가 연결된 계정이므로, 다른 GitHub 계정이 필요합니다.
 
-        <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-no-ghcp.jpg" alt="GitHub Copilot 라이선스 없음" width="200" /> <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-free-1.jpg" alt="GitHub Copilot 무료 라이선스 예시 1" width="200" /> <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-free-2.jpg" alt="GitHub Copilot 무료 라이선스 예시 2" width="200" />
+        <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-no-ghcp.jpg" alt="GitHub Copilot 라이선스 없음" width="200" /> <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-free-1.jpg" alt="GitHub Copilot 무료 라이선스 예시 1" width="200" /> <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-free-2.jpg" alt="GitHub Copilot 무료 라이선스 예시 2" width="200" />
 
   - type: dropdown
     id: request-type
     attributes:
       label: 요청 유형
       options:
-        - GitHub 조직 초대 요청
+        - GitHub 조직 온보딩 요청
     validations:
       required: true
 
@@ -40,7 +40,7 @@ body:
     attributes:
       label: 조직
       options:
-        - devrel-kr
+        - {{ORG_NAME}}
     validations:
       required: true
 
@@ -65,4 +65,4 @@ body:
     attributes:
       value: |
         <br/>
-        초대 요청을 제출하면 GitHub 알림과 계정에 등록된 이메일로 조직 초대가 발송됩니다. 초대를 수락하면 조직에 참여할 수 있습니다. 감사합니다!
+        초대 요청을 제출하면 GitHub 알림과 함께 계정에 등록한 이메일로 조직에 가입하라는 초대장을 발송합니다. 초대를 수락하면 조직에 참여할 수 있습니다. 감사합니다!

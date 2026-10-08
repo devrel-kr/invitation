@@ -68,6 +68,8 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
     var email = GetIssueFormValue(issueBody, "Email", "이메일");
     var invalidReasons = new List<string>();
     var hasExpectedRequestType =
+        string.Equals(requestType, "Azure subscription onboarding request", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(requestType, "Azure 구독 온보딩 요청", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(requestType, "Azure subscription invitation request", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(requestType, "Azure 구독 초대 요청", StringComparison.OrdinalIgnoreCase);
 
@@ -99,7 +101,7 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
 
     var githubHandle = profileUrl?.Replace("https://github.com/", "", StringComparison.Ordinal);
     var normalizedRequestType = hasExpectedRequestType
-        ? "Azure subscription invitation request"
+        ? "Azure subscription onboarding request"
         : requestType;
     return new ValidatedBody(normalizedRequestType, organisation, githubHandle, name, email, invalidReasons);
 }
@@ -111,6 +113,8 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
     var githubHandle = GetIssueFormValue(issueBody, "GitHub Handle", "GitHub 핸들");
     var invalidReasons = new List<string>();
     var hasExpectedRequestType =
+        string.Equals(requestType, "GitHub organization onboarding request", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(requestType, "GitHub 조직 온보딩 요청", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(requestType, "GitHub organization invitation request", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(requestType, "GitHub 조직 초대 요청", StringComparison.OrdinalIgnoreCase);
 
@@ -130,7 +134,7 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
     }
 
     var normalizedRequestType = hasExpectedRequestType
-        ? "GitHub organization invitation request"
+        ? "GitHub organization onboarding request"
         : requestType;
     return new ValidatedBody(normalizedRequestType, organisation, githubHandle, null, null, invalidReasons);
 }

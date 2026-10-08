@@ -1,8 +1,8 @@
-name: Azure 구독 초대 요청
+name: Azure 구독 온보딩 요청
 
-description: Azure 구독에 초대를 요청하기 위한 이슈 템플릿입니다.
+description: Azure 구독에 온보딩을 요청하기 위한 이슈 템플릿입니다.
 
-title: "[Azure 구독 초대 요청] "
+title: "[Azure 구독 온보딩 요청] "
 
 labels:
   - invitation
@@ -20,7 +20,7 @@ body:
     attributes:
       label: 요청 유형
       options:
-        - Azure 구독 초대 요청
+        - Azure 구독 온보딩 요청
     validations:
       required: true
 
@@ -29,15 +29,7 @@ body:
     attributes:
       label: 조직
       options:
-        - devrelkorea.org
-    validations:
-      required: true
-
-  - type: input
-    id: github-profile-link
-    attributes:
-      label: GitHub 프로필 링크
-      placeholder: https://github.com/octocat
+        - {{ENTRA_TENANT_DOMAIN_NAME}}
     validations:
       required: true
 
@@ -53,7 +45,7 @@ body:
     id: email
     attributes:
       label: 이메일
-      placeholder: kgaebal@gmail.com (반드시 gmail, outlook, naver 등과 같은 개인 이메일 주소를 사용하세요)
+      placeholder: kgaebal@gmail.com (반드시 gmail.com, outlook.com, naver.com, kakao.com과 같은 개인 이메일 주소를 사용하세요, 회사 이메일은 사용하지 마세요)
     validations:
       required: true
 

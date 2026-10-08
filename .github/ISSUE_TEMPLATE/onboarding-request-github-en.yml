@@ -1,7 +1,7 @@
-name: GitHub organization invitation request
-description: Issue template for requesting an invitation to a GitHub organization.
+name: GitHub organization onboarding request
+description: Issue template for requesting onboarding to a GitHub organization.
 
-title: "[GitHub organization invitation request] "
+title: "[GitHub organization onboarding request] "
 
 labels:
   - invitation
@@ -20,18 +20,18 @@ body:
 
         Scan the QR code below &mdash; or open [github.com/settings/copilot/features](https://github.com/settings/copilot/features) directly &mdash; to check whether the account you are currently signed in with already has a GitHub Copilot license.
 
-        <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-check.png" alt="QR code linking to the GitHub Copilot settings page" width="200" />
+        <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-check.png" alt="QR code linking to the GitHub Copilot settings page" width="200" />
 
         After opening that page, scroll down. You should see one of the three screens below. If you see anything else, your account already has a Copilot license attached and you will need a different GitHub account.
 
-        <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-no-ghcp.jpg" alt="No GitHub Copilot license attached" width="200" /> <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-free-1.jpg" alt="GitHub Copilot Free example 1" width="200" /> <img src="https://raw.githubusercontent.com/devrel-kr/invitation/main/images/ghcp-free-2.jpg" alt="GitHub Copilot Free example 2" width="200" />
+        <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-no-ghcp.jpg" alt="No GitHub Copilot license attached" width="200" /> <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-free-1.jpg" alt="GitHub Copilot Free example 1" width="200" /> <img src="https://raw.githubusercontent.com/{{ORG_NAME}}/invitation/main/images/ghcp-free-2.jpg" alt="GitHub Copilot Free example 2" width="200" />
 
   - type: dropdown
     id: request-type
     attributes:
       label: Request Type
       options:
-        - GitHub organization invitation request
+        - GitHub organization onboarding request
     validations:
       required: true
 
@@ -40,7 +40,7 @@ body:
     attributes:
       label: Organization
       options:
-        - devrel-kr
+        - {{ORG_NAME}}
     validations:
       required: true
 

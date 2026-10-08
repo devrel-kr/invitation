@@ -1,8 +1,8 @@
 # Onboarding to Azure and GitHub
 
-This repository is a reusable GitHub issue-form and Actions template for onboarding people to:
+This repository is to help users onboard to:
 
-- an Azure tenant, subscription, and security group; and
+- an Azure tenant, subscription, and security group; and/or
 - a GitHub organization.
 
 An applicant submits an issue form, the matching workflow validates the request, performs the invitation, comments on the issue, applies labels, and closes the issue.
@@ -24,7 +24,16 @@ An applicant submits an issue form, the matching workflow validates the request,
 
 ## Getting started
 
-Create your repository with [![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea44f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/devrel-kr/invitation/generate), then clone it locally.
+1. Create your repository with [![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea44f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/devrel-kr/invitation/generate), then clone it locally.
+1. Choose the issue form either in English or Korean.
+   - English:
+     - `.github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml`
+     - `.github/ISSUE_TEMPLATE/onboarding-request-github-en.yml`
+   - Korean:
+     - `.github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml`
+     - `.github/ISSUE_TEMPLATE/onboarding-request-github-ko.yml`
+1. In `.github/ISSUE_TEMPLATE/onboarding-request-azure-*.yml`, replace `{{ENTRA_TENANT_DOMAIN_NAME}}` with your actual Entra tenant domain name. It may be Entra provided domain like `my-tenant.onmicrosoft.com` or custom domain like `my-tenant.com`.
+1. In `.github/ISSUE_TEMPLATE/onboarding-request-github-*.yml`, replace `{{ORG_NAME}}` with your GitHub organization name.
 
 ## How the onboarding flow works
 
@@ -32,24 +41,24 @@ Create your repository with [![Use this template](https://img.shields.io/badge/U
 flowchart LR
     A[Issue opened with issue form]
 
-    A --> B[invite-user-to-azure.yml]
-    B --> C[Validate-InvitationRequest.cs]
-    C --> D[Invite-ToAzure.cs]
+    A --> B[onboard-user-to-azure.yml]
+    B --> C[Validate-OnboardingRequest.cs]
+    C --> D[Onboard-ToAzure.cs]
 
-    A --> E[invite-user-to-github.yml]
-    E --> F[Validate-InvitationRequest.cs]
-    F --> G[Invite-ToGitHub.cs]
+    A --> E[onboard-user-to-github.yml]
+    E --> F[Validate-OnboardingRequest.cs]
+    F --> G[Onboard-ToGitHub.cs]
 ```
 
 ## Configure a new repository from this template
 
 1. Update the organization names in:
-   - `.github/ISSUE_TEMPLATE/invitation-request-azure-en.yml`
-   - `.github/ISSUE_TEMPLATE/invitation-request-azure-ko.yml`
-   - `.github/ISSUE_TEMPLATE/invitation-request-github-en.yml`
-   - `.github/ISSUE_TEMPLATE/invitation-request-github-ko.yml`
+   - `.github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml`
+   - `.github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml`
+   - `.github/ISSUE_TEMPLATE/onboarding-request-github-en.yml`
+   - `.github/ISSUE_TEMPLATE/onboarding-request-github-ko.yml`
    - the corresponding workflow files.
-1. Update the title prefixes consistently in the issue forms, workflows, and `scripts/Validate-InvitationRequest.cs`.
+1. Update the title prefixes consistently in the issue forms, workflows, and `scripts/Validate-OnboardingRequest.cs`.
 1. Replace the Copilot guidance and images if the target program has different eligibility requirements.
 1. Configure the repository variables and secrets described below.
 1. Run the validation commands locally before enabling real invitations.
@@ -98,7 +107,7 @@ The issue forms and workflows are YAML. The `redhat.vscode-yaml` extension inclu
 Run the validator against an issue payload:
 
 ```bash
-dotnet run --file ./scripts/Validate-InvitationRequest.cs -- \
+dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
   --request-type github \
   --input ./payload.json \
   --output ./issue.json \
@@ -114,11 +123,11 @@ Use a mock payload when testing locally. Do not run invitation scripts against p
 | Path | Purpose |
 | --- | --- |
 | `.github/ISSUE_TEMPLATE/` | English and Korean onboarding forms |
-| `.github/workflows/invite-user-to-azure.yml` | Azure invitation workflow |
-| `.github/workflows/invite-user-to-github.yml` | GitHub organization invitation workflow |
-| `scripts/Validate-InvitationRequest.cs` | Shared request validator |
-| `scripts/Invite-ToAzure.cs` | Azure tenant invitation and group membership |
-| `scripts/Invite-ToGitHub.cs` | GitHub organization invitation |
+| `.github/workflows/onboard-user-to-azure.yml` | Azure onboarding workflow |
+| `.github/workflows/onboard-user-to-github.yml` | GitHub organization onboarding workflow |
+| `scripts/Validate-OnboardingRequest.cs` | Shared request validator |
+| `scripts/Onboard-ToAzure.cs` | Azure user invitation and group membership |
+| `scripts/Onboard-ToGitHub.cs` | GitHub organization invitation and team assignment |
 | `scripts/Setup-GitHubApp.cs` | GitHub App manifest registration and credential setup |
 | `scripts/Setup-GitHubTeam.cs` | Idempotent GitHub team and repository-variable setup |
 | `scripts/Setup-EntraSecurityGroup.cs` | Idempotent Entra security group and repository-variable setup |
@@ -140,7 +149,7 @@ When adapting this repository, review all of the following:
 
 - organization and subscription names;
 - issue-form title prefixes and field labels;
-- allowed email domains in `Validate-InvitationRequest.cs`;
+- allowed email domains in `Validate-OnboardingRequest.cs`;
 - invitation deadline and time zone;
 - Azure security group;
 - GitHub onboarding team;

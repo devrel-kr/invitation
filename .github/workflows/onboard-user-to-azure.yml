@@ -22,18 +22,20 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.issue.title, '[Azure subscription onboarding request]') ||
+      startsWith(github.event.issue.title, '[Azure 구독 온보딩 요청]') ||
       startsWith(github.event.issue.title, '[Azure subscription invitation request]') ||
       startsWith(github.event.issue.title, '[Azure 구독 초대 요청]')
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Generate bot token
-        id: bot-token
+      - name: Generate app token
+        id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: invitation
           permission-contents: read
@@ -53,18 +55,18 @@ jobs:
           github.event_name == 'workflow_dispatch'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.inputs.issue-number }}" \
             > "${{ github.workspace }}/payload.json"
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: "10.x"
 
       - name: Validate Azure subscription request
         id: issue
@@ -72,32 +74,40 @@ jobs:
         env:
           DUE_DATE: ${{ vars.INVITATION_DUE_DATE }}
         run: |
-          dotnet run --file ./scripts/Validate-InvitationRequest.cs -- \
+          dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
             --request-type azure \
             --input "${{ github.workspace }}/payload.json" \
             --output "${{ github.workspace }}/issue.json" \
             --due-date "$DUE_DATE" \
-            --organization "devrelkorea.org" \
+            --organization "{{ORG_NAME}}" \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Comment to issue - Acknowledge
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "create-comment"
-          token: ${{ steps.bot-token.outputs.token }}
-          issue-number: ${{ steps.issue.outputs.issueNumber }}
-          emoji: "+1,rocket"
-          body: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
+          COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
             Your issue is being reviewed. We will notify you again once we confirm whether it is complete.
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$COMMENT_BODY" \
+            --repo "$GITHUB_REPOSITORY"
+
+          for reaction in '+1' rocket; do
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/reactions" \
+              -f content="$reaction" > /dev/null
+          done
 
       - name: Add a label - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --add-label "invalid" \
@@ -106,12 +116,11 @@ jobs:
       - name: Comment to issue - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "create-comment"
-          token: ${{ steps.bot-token.outputs.token }}
-          issue-number: ${{ steps.issue.outputs.issueNumber }}
-          body: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
+          COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
             - Submitted at: ${{ steps.issue.outputs.submittedAt }}
@@ -120,13 +129,17 @@ jobs:
             Your request is not valid for the following reasons:
 
             ${{ steps.issue.outputs.invalidReasons }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$COMMENT_BODY" \
+            --repo "$GITHUB_REPOSITORY"
 
       - name: Close issue - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
             -c "The submitted request is invalid. Closing this issue." \
@@ -135,7 +148,7 @@ jobs:
       - name: Sign in to Azure
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
         uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -145,14 +158,14 @@ jobs:
       - name: Invite user to Azure tenant
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
         shell: bash
         env:
           INVITEE_EMAIL: ${{ steps.issue.outputs.email }}
           INVITEE_NAME: ${{ steps.issue.outputs.name }}
           SECURITY_GROUP: ${{ vars.AZURE_SECURITY_GROUP }}
         run: |
-          dotnet run --file ./scripts/Invite-ToAzure.cs -- \
+          dotnet run --file ./scripts/Onboard-ToAzure.cs -- \
             --email "$INVITEE_EMAIL" \
             --name "$INVITEE_NAME" \
             --security-group "$SECURITY_GROUP"
@@ -160,10 +173,10 @@ jobs:
       - name: Add label - Complete
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
           --add-label "complete" \
@@ -172,10 +185,10 @@ jobs:
       - name: Remove label - request
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
           --remove-label "request" \
@@ -184,25 +197,33 @@ jobs:
       - name: Comment to issue - Complete
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "create-comment"
-          token: ${{ steps.bot-token.outputs.token }}
-          issue-number: ${{ steps.issue.outputs.issueNumber }}
-          emoji: "+1,rocket"
-          body: |
+          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
+          COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
             An invitation has been sent to the email address you provided. After accepting the invitation, you can join the subscription.
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$COMMENT_BODY" \
+            --repo "$GITHUB_REPOSITORY"
+
+          for reaction in '+1' rocket; do
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/reactions" \
+              -f content="$reaction" > /dev/null
+          done
 
       - name: Close issue - Complete
         if: |
           steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription invitation request'
+          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
             -c "The invitation request is complete. Closing this issue." \

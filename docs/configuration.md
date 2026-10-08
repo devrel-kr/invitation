@@ -44,7 +44,7 @@ The manifest requests these permissions:
    | --- | --- | --- |
    | Repository permissions → Contents | Read-only | Allows the generated token to access repository content |
    | Repository permissions → Issues | Read and write | Allows comments, labels, issue lookup, and issue closure |
-   | Organization permissions → Members | Read and write | Allows `Invite-ToGitHub.cs` to invite members into the configured team |
+   | Organization permissions → Members | Read and write | Allows `Onboard-ToGitHub.cs` to invite members into the configured team |
 
 After registration, the script opens the app installation page. Install the app on the target organization and grant it access to the repository created from this template. App installation still requires organization-owner approval and cannot be completed by the manifest exchange alone.
 
@@ -65,7 +65,7 @@ dotnet run --file ./scripts/Setup-GitHubTeam.cs -- \
   --github-repo "OWNER/REPOSITORY"
 ```
 
-The supported privacy values are `closed` and `secret`. On each successful invitation, `Invite-ToGitHub.cs` sends the configured team ID in the `team_ids` array, so GitHub adds the new member to that team after they accept the organization invitation.
+The supported privacy values are `closed` and `secret`. On each successful invitation, `Onboard-ToGitHub.cs` sends the configured team ID in the `team_ids` array, so GitHub adds the new member to that team after they accept the organization invitation.
 
 ## Create the Azure workload identity
 
@@ -125,7 +125,7 @@ Review the generated permissions for your environment. In particular, the setup 
 
 ## Create the Azure security group
 
-`AZURE_SECURITY_GROUP` identifies the Microsoft Entra security group that receives each invited user. `Invite-ToAzure.cs` resolves the value with `az ad group show` and then adds the invited user as a member.
+`AZURE_SECURITY_GROUP` identifies the Microsoft Entra security group that receives each invited user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the invited user as a member.
 
 `Setup-EntraSecurityGroup.cs` searches for an exact display-name match, reuses an existing security-enabled group, or creates a new security group. It fails when duplicate display names make the result ambiguous or when the existing group is not security-enabled. The script stores the group object ID in `AZURE_SECURITY_GROUP`.
 
