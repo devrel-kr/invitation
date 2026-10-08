@@ -9,8 +9,11 @@ using System.Text.Json;
 
 var options = Arguments.Parse(args);
 var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
-var callbackUrl = $"http://127.0.0.1:{options.CallbackPort}/callback/";
 var listenerUrl = $"http://127.0.0.1:{options.CallbackPort}/";
+var codespacesBaseUrl = GetCodespacesBaseUrl(options.CallbackPort);
+var registrationBaseUrl = codespacesBaseUrl ?? listenerUrl;
+var callbackUrl = new Uri(new Uri(registrationBaseUrl), "callback/").ToString();
+var canOpenBrowser = options.OpenBrowser && codespacesBaseUrl is null;
 var githubWebUrl = Environment.GetEnvironmentVariable("GH_WEB_URL")?.TrimEnd('/')
     ?? "https://github.com";
 var githubApiUrl = Environment.GetEnvironmentVariable("GH_API_URL")?.TrimEnd('/')
@@ -44,13 +47,17 @@ using var listener = new HttpListener();
 listener.Prefixes.Add(listenerUrl);
 listener.Start();
 
-Console.WriteLine($"Opening GitHub App registration for organization '{options.GitHubOrganization}'...");
-if (options.OpenBrowser)
+Console.WriteLine($"Preparing GitHub App registration for organization '{options.GitHubOrganization}'...");
+if (canOpenBrowser)
 {
-    OpenBrowser(listenerUrl);
+    OpenBrowser(registrationBaseUrl);
+}
+else
+{
+    Console.WriteLine($"Open this URL in your browser: {registrationBaseUrl}");
 }
 
-Console.WriteLine($"If the browser did not open, visit: {listenerUrl}");
+Console.WriteLine($"The local callback listener is running at {listenerUrl}");
 Console.WriteLine("Complete the GitHub approval within 10 minutes.");
 
 using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
@@ -107,9 +114,41 @@ Console.WriteLine($"APP_CLIENT_ID saved to {options.GitHubRepo}.");
 Console.WriteLine($"APP_PRIVATE_KEY saved to {options.GitHubRepo}.");
 Console.WriteLine("Install the app on the organization and grant it access to the repository:");
 Console.WriteLine(installationUrl);
-if (options.OpenBrowser)
+if (canOpenBrowser)
 {
     OpenBrowser(installationUrl);
+}
+
+static string? GetCodespacesBaseUrl(int port)
+{
+    if (!string.Equals(
+            Environment.GetEnvironmentVariable("CODESPACES"),
+            "true",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    var codespaceName = Environment.GetEnvironmentVariable("CODESPACE_NAME");
+    var forwardingDomain = Environment.GetEnvironmentVariable("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN");
+    if (string.IsNullOrWhiteSpace(codespaceName) ||
+        string.IsNullOrWhiteSpace(forwardingDomain))
+    {
+        throw new InvalidOperationException(
+            "CODESPACE_NAME and GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN are required in GitHub Codespaces.");
+    }
+
+    var expectedHost = $"{codespaceName}-{port}.{forwardingDomain}";
+    var forwardedUrl = $"https://{expectedHost}/";
+    if (!Uri.TryCreate(forwardedUrl, UriKind.Absolute, out var uri) ||
+        !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+        !string.Equals(uri.Host, expectedHost, StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException(
+            "GitHub Codespaces did not provide a valid HTTPS port-forwarding URL.");
+    }
+
+    return uri.ToString();
 }
 
 static async Task<string> ReceiveManifestCodeAsync(
