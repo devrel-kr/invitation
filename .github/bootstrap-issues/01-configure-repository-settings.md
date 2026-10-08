@@ -27,7 +27,7 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   ```
 
   The helper uses the authenticated `gh` session. If running it outside the repository root, provide the path to the script.
-- [ ] Configure the verified Entra tenant domain by replacing the example domain and running this command. The helper locates the repository root by searching upward from its source file for `global.json`; when running it from outside the repository, provide the path to the helper script.
+- [ ] Configure the verified Entra tenant domain by replacing the example domain and running this command. From another directory, provide the path to the helper script.
 
   ```bash
   dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"

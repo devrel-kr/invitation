@@ -64,7 +64,7 @@ The command assumes the repository root is the current directory. If invoking it
 
 The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with the same domain.
 
-The helper finds the repository root by walking up from its source file until it finds `global.json`, so its target paths do not depend on the current working directory. The command below assumes the repository root is the current directory; if invoking it elsewhere, provide the path to the helper script. Replace the example with a verified domain:
+The command assumes the repository root is the current directory. If invoking it elsewhere, provide the path to the helper script. Replace the example domain with a verified domain:
 
 ```bash
 dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"
