@@ -40,10 +40,13 @@ gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" \
   --enable-wiki=false \
   --enable-discussions=false \
   --enable-projects=false \
-  --enable-issues
+  --enable-issues \
+  --enable-squash-merge \
+  --enable-merge-commit=false \
+  --enable-rebase-merge=false
 ```
 
-This leaves repository visibility, pull-request availability, and PR merge settings unchanged.
+This leaves repository visibility and pull-request availability unchanged; pull requests can be merged only with squash commits.
 
 ### Create the default-branch ruleset
 
