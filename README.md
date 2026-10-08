@@ -32,7 +32,7 @@ A requester submits an issue form, the matching workflow validates and completes
    - Korean:
      - `.github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml`
      - `.github/ISSUE_TEMPLATE/onboarding-request-github-ko.yml`
-1. In `.github/ISSUE_TEMPLATE/onboarding-request-azure-*.yml`, replace `{{ENTRA_TENANT_DOMAIN_NAME}}` with your actual Entra tenant domain name. It may be Entra provided domain like `my-tenant.onmicrosoft.com` or custom domain like `my-tenant.com`.
+1. In `.github/ISSUE_TEMPLATE/onboarding-request-azure-*.yml` and the Azure workflow's `EXPECTED_ORGANIZATION` setting, replace `{{ENTRA_TENANT_DOMAIN_NAME}}` with your actual Entra tenant domain name. It may be Entra provided domain like `my-tenant.onmicrosoft.com` or custom domain like `my-tenant.com`.
 1. In `.github/ISSUE_TEMPLATE/onboarding-request-github-*.yml`, replace `{{ORG_NAME}}` with your GitHub organization name and `{{REPOSITORY_NAME}}` with this repository's name.
 
 ## How the onboarding flow works

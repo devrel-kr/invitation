@@ -21,13 +21,13 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (startsWith(github.event.issue.title, '[GitHub organization onboarding request]') ||
-      startsWith(github.event.issue.title, '[GitHub 조직 온보딩 요청]'))
+       startsWith(github.event.issue.title, '[GitHub 조직 온보딩 요청]'))
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Generate bot token
-        id: bot-token
+      - name: Generate app token
+        id: app-token
         uses: actions/create-github-app-token@v3
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
@@ -52,18 +52,18 @@ jobs:
           github.event_name == 'workflow_dispatch'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.inputs.issue-number }}" \
             > "${{ github.workspace }}/payload.json"
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: "10.x"
 
       - name: Validate GitHub organization request
         id: issue
@@ -83,7 +83,7 @@ jobs:
       - name: Comment to issue - Acknowledge
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
           COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
@@ -105,7 +105,7 @@ jobs:
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --add-label "invalid" \
@@ -116,7 +116,7 @@ jobs:
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
           COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
@@ -137,7 +137,7 @@ jobs:
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
             -c "The submitted request is invalid. Closing this issue." \
@@ -148,7 +148,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ORGANIZATION: ${{ steps.issue.outputs.org }}
           GITHUB_HANDLE: ${{ steps.issue.outputs.githubHandle }}
           TEAM_ID: ${{ vars.GITHUB_TEAM_ID }}
@@ -163,7 +163,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --add-label "complete" \
@@ -174,7 +174,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --remove-label "request" \
@@ -185,7 +185,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
           COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
@@ -207,7 +207,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
             -c "The GitHub organization onboarding request is complete. Closing this issue." \

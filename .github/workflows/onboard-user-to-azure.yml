@@ -14,7 +14,6 @@ permissions:
   contents: read
   id-token: write
   issues: write
-  pull-requests: write
 
 jobs:
   onboard_user:
@@ -71,13 +70,14 @@ jobs:
         shell: bash
         env:
           DUE_DATE: ${{ vars.ONBOARDING_DUE_DATE }}
+          EXPECTED_ORGANIZATION: "{{ENTRA_TENANT_DOMAIN_NAME}}"
         run: |
           dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
             --request-type azure \
             --input "${{ github.workspace }}/payload.json" \
             --output "${{ github.workspace }}/issue.json" \
             --due-date "$DUE_DATE" \
-            --organization "{{ORG_NAME}}" \
+            --organization "$EXPECTED_ORGANIZATION" \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Comment to issue - Acknowledge
@@ -100,7 +100,7 @@ jobs:
               -f content="$reaction" > /dev/null
           done
 
-      - name: Add a label - Invalid
+      - name: Add label - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
