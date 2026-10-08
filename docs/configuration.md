@@ -34,9 +34,9 @@ dotnet run --file ./scripts/Setup-GitHubApp.cs -- \
   --github-repo "OWNER/REPOSITORY"
 ```
 
-The script listens on `http://127.0.0.1:53682/` for up to 10 minutes. Run it from a machine where that address can be opened in your browser, or forward the port when using a remote development environment. Use `--callback-port` to select another local port.
+The script listens on `http://127.0.0.1:53682/` for up to 10 minutes and registers a loopback callback URL with GitHub. Run the script on the same machine as the browser. GitHub Codespaces and other remote environments cannot complete this callback by forwarding the port alone; run the setup script locally. Use `--callback-port` to select another local port.
 
-Use `--no-open` when the browser must be opened manually, such as in a remote shell.
+`--no-open` only prevents the script from opening the browser automatically; it does not change the callback address or make it reachable from a remote environment.
 
 The manifest requests these permissions:
 
