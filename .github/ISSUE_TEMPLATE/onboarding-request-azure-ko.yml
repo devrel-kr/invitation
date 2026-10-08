@@ -45,7 +45,7 @@ body:
     id: email
     attributes:
       label: 이메일
-      placeholder: kgaebal@gmail.com (gmail.com, outlook.com, outlook.kr, hotmail.com, naver.com, kakao.com 중 개인 이메일을 사용하세요. 회사 이메일은 사용할 수 없습니다.)
+      placeholder: kgaebal@gmail.com (gmail.com, outlook.com, outlook.kr, hotmail.com, naver.com, kakao.com 등과 같은 개인 이메일을 사용하세요. 회사 이메일은 사용할 수 없습니다.)
     validations:
       required: true
 

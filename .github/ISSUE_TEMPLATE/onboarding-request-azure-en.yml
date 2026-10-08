@@ -45,7 +45,7 @@ body:
     id: email
     attributes:
       label: Email
-      placeholder: "jane.developer@gmail.com (use a personal email from one of these domains: gmail.com, outlook.com, outlook.kr, hotmail.com, naver.com, or kakao.com; work email is not allowed)"
+      placeholder: "jane.developer@gmail.com (use a personal email address like gmail.com, outlook.com, hotmail.com or so; work email is not allowed)"
     validations:
       required: true
 

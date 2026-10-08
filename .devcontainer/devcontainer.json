@@ -1,8 +1,6 @@
 {
   "name": "Onboarding",
 
-  "forwardPorts": [53682],
-
   "image": "mcr.microsoft.com/devcontainers/dotnet:10.0-noble",
 
   "features": {
@@ -36,6 +34,10 @@
       }
     }
   },
+
+  "forwardPorts": [
+    53682
+  ],
 
   "remoteUser": "vscode",
 
