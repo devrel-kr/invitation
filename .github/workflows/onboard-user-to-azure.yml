@@ -145,8 +145,7 @@ jobs:
 
       - name: Sign in to Azure
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+          steps.issue.outputs.isValid == 'true'
         uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
@@ -155,8 +154,7 @@ jobs:
 
       - name: Invite user to Azure tenant
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           INVITEE_EMAIL: ${{ steps.issue.outputs.email }}
@@ -170,8 +168,7 @@ jobs:
 
       - name: Add label - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -182,8 +179,7 @@ jobs:
 
       - name: Remove label - request
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -194,8 +190,7 @@ jobs:
 
       - name: Comment to issue - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -217,8 +212,7 @@ jobs:
 
       - name: Close issue - Complete
         if: |
-          steps.issue.outputs.isValid == 'true' &&
-          steps.issue.outputs.requestType == 'Azure subscription onboarding request'
+          steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
