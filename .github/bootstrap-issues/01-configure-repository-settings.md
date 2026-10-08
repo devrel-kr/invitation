@@ -74,50 +74,11 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   '@
   $rulesetJson | gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input -
   ```
-- [ ] Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` placeholder in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with a verified domain from the target tenant. See [Configure the expected Entra tenant domain](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#configure-the-expected-entra-tenant-domain).
-
-  From the repository root, in Bash on Linux, Codespaces, or Git Bash, change `contoso.onmicrosoft.com` below to the verified domain:
+- [ ] Configure the verified Entra tenant domain by running this command from the repository root, replacing the example domain:
 
   ```bash
-  set -euo pipefail
-  tenant_domain="contoso.onmicrosoft.com"
-  for file in \
-    .github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml \
-    .github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml \
-    .github/workflows/onboard-user-to-azure.yml; do
-    if ! grep -Fq '{{ENTRA_TENANT_DOMAIN_NAME}}' "$file"; then
-      printf 'Expected placeholder not found in %s\n' "$file" >&2
-      exit 1
-    fi
-    sed -i "s|{{ENTRA_TENANT_DOMAIN_NAME}}|${tenant_domain}|g" "$file"
-  done
+  dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"
   ```
 
-  In PowerShell, change `$tenantDomain` to the verified domain:
-
-  ```powershell
-  $ErrorActionPreference = "Stop"
-  $tenantDomain = "contoso.onmicrosoft.com"
-  $placeholder = "{{ENTRA_TENANT_DOMAIN_NAME}}"
-  $root = (Get-Location).ProviderPath
-  $files = @(
-      (Join-Path $root ".github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml"),
-      (Join-Path $root ".github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml"),
-      (Join-Path $root ".github/workflows/onboard-user-to-azure.yml")
-  )
-  $encoding = [Text.UTF8Encoding]::new($false)
-
-  foreach ($file in $files) {
-      $content = [IO.File]::ReadAllText($file)
-      if (-not $content.Contains($placeholder)) {
-          throw "Expected placeholder not found in $file"
-      }
-
-      [IO.File]::WriteAllText(
-          $file,
-          $content.Replace($placeholder, $tenantDomain),
-          $encoding
-      )
-  }
-  ```
+  See [Configure the expected Entra tenant domain](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#configure-the-expected-entra-tenant-domain) for details.
 - [ ] Validate the issue forms and workflows before accepting onboarding requests.

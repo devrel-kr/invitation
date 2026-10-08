@@ -119,50 +119,13 @@ $rulesetJson | gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rule
 
 The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with the same domain.
 
-From the repository root, in Bash on Linux, Codespaces, or Git Bash, change `contoso.onmicrosoft.com` below to the verified domain:
+Run the file-based helper from the repository root, replacing the example with a verified domain:
 
 ```bash
-set -euo pipefail
-tenant_domain="contoso.onmicrosoft.com"
-for file in \
-  .github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml \
-  .github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml \
-  .github/workflows/onboard-user-to-azure.yml; do
-  if ! grep -Fq '{{ENTRA_TENANT_DOMAIN_NAME}}' "$file"; then
-    printf 'Expected placeholder not found in %s\n' "$file" >&2
-    exit 1
-  fi
-  sed -i "s|{{ENTRA_TENANT_DOMAIN_NAME}}|${tenant_domain}|g" "$file"
-done
+dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"
 ```
 
-In PowerShell, change `$tenantDomain` to the verified domain:
-
-```powershell
-$ErrorActionPreference = "Stop"
-$tenantDomain = "contoso.onmicrosoft.com"
-$placeholder = "{{ENTRA_TENANT_DOMAIN_NAME}}"
-$root = (Get-Location).ProviderPath
-$files = @(
-    (Join-Path $root ".github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml"),
-    (Join-Path $root ".github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml"),
-    (Join-Path $root ".github/workflows/onboard-user-to-azure.yml")
-)
-$encoding = [Text.UTF8Encoding]::new($false)
-
-foreach ($file in $files) {
-    $content = [IO.File]::ReadAllText($file)
-    if (-not $content.Contains($placeholder)) {
-        throw "Expected placeholder not found in $file"
-    }
-
-    [IO.File]::WriteAllText(
-        $file,
-        $content.Replace($placeholder, $tenantDomain),
-        $encoding
-    )
-}
-```
+The helper validates the domain, updates both Azure issue forms and `EXPECTED_ORGANIZATION` in the Azure workflow, and is safe to rerun with the same domain. It fails if one of the expected placeholders or already-configured values is missing.
 
 ## Create the GitHub App
 
