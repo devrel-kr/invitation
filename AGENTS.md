@@ -55,7 +55,7 @@ Keep repository-specific organization, tenant, subscription, and credential valu
 ## Git commits and pull requests
 
 - Make an atomic commit for each completed logical task or independent batch—not for every intermediate edit. Use Conventional Commit subjects such as `feat:`, `fix:`, `docs:`, `test:`, or `chore:`.
-- After relevant checks pass, commit the completed task to the current branch unless the user says otherwise. Do not push to a remote repository unless the user explicitly instructs you to do so. Stage only changes belonging to that task; preserve unrelated pre-existing work. Do not amend or force-push unless explicitly requested.
+- Create or use a task-specific branch for each job; never commit changes directly to `main`. After relevant checks pass, commit changes to that branch. Pushing the task branch to the remote is allowed; do not push directly to `main`. Stage only changes belonging to that task; preserve unrelated pre-existing work. Do not amend or force-push unless explicitly requested.
 - When asked to create or update a pull request, use [the repository PR template](./.github/PULL_REQUEST_TEMPLATE.md). Preserve its headings and checklist, replace placeholders with accurate details, and include validation commands with their results.
 - If the branch already has a pull request, push updates to that branch rather than creating a duplicate.
 
