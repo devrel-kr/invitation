@@ -1,6 +1,6 @@
-# [Bootstrap 3/4] Set up the Azure service principal
+# [Bootstrap 4/5] Set up the Azure service principal
 
-Configure the Azure workload identity used by the Azure onboarding workflow. Complete [Bootstrap 2/4](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first.
+Configure the Azure workload identity used by the Azure onboarding workflow. Complete [Bootstrap 3/5](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first.
 
 ## Steps
 
@@ -25,5 +25,4 @@ Configure the Azure workload identity used by the Azure onboarding workflow. Com
 
 - [ ] Review the generated permissions. The script currently assigns `Contributor` at subscription scope.
 - [ ] Confirm `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` are set as repository variables.
-- [ ] Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` placeholder in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with a verified domain from the same tenant.
 - [ ] Confirm the GitHub Actions federated credential trusts the repository's `main` branch.

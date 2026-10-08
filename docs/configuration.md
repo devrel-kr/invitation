@@ -27,61 +27,27 @@ When a repository is created from this template, `.github/workflows/init.yml` ru
 
 The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities or configure repository variables or secrets. It also does not create repository rulesets: its `GITHUB_TOKEN` can write repository contents and issues, but cannot administer repository settings. Bootstrap issue 1 creates the ruleset manually using an administrator-authenticated `gh` session. Complete the generated issues in order before accepting onboarding requests.
 
-The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 3. See the matching section below and complete it before accepting Azure onboarding requests.
+The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 1. See the matching section below and complete it before accepting Azure onboarding requests.
 
-## Create the GitHub App
+## Configure repository settings
 
-**Bootstrap issue 1/4**
+**Bootstrap issue 1/5**
 
-The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on onboarding issues, changes labels, closes completed requests, and manages GitHub organization membership.
-
-`Setup-GitHubApp.cs` uses GitHub's [App Manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest). The script opens a browser for organization-owner approval, receives the temporary callback code on localhost, exchanges it for the App client ID and one-time private key, and writes `APP_CLIENT_ID` and `APP_PRIVATE_KEY` to the repository.
-
-`--app-name` sets the GitHub App's name. `onboarding-automation` is an example; replace it with the name you choose. The Azure app registration created in Bootstrap issue 3 is a separate resource and can have a different name.
-
-Authenticate `gh`, then run:
+Use `gh` as a repository administrator or organization owner to configure the repository features:
 
 ```bash
-# zsh/bash
-gh auth login
-
-dotnet run --file ./scripts/Setup-GitHubApp.cs -- \
-  --app-name "onboarding-automation" \
-  --github-org "{{ORG_NAME}}" \
-  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" \
+  --enable-wiki=false \
+  --enable-discussions=false \
+  --enable-projects=false \
+  --enable-issues
 ```
 
-```powershell
-# PowerShell
-gh auth login
-
-dotnet run --file ./scripts/Setup-GitHubApp.cs -- `
-  --app-name "onboarding-automation" `
-  --github-org "{{ORG_NAME}}" `
-  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
-```
-
-The script listens on `http://127.0.0.1:53682/` for up to 10 minutes. On a local machine, it registers a loopback callback URL with GitHub, so run the script on the same machine as the browser.
-
-In GitHub Codespaces, the script detects `CODESPACES=true` and registers `https://<codespace-name>-<port>.<forwarding-domain>/callback/` as the callback while continuing to listen on loopback. The default dev container forwards port `53682`. Run the setup command with `--no-open`, then open the forwarded registration URL printed by the script in a browser signed in to GitHub. Keep the port private so only your Codespaces user can access it. Use `--callback-port` to select another port; Codespaces will forward that port when the script prints its local listener URL.
-
-`--no-open` prevents the script from launching a browser. In Codespaces, the script always prints the forwarded URL for you to open manually.
-
-The manifest requests these permissions:
-
-| Scope                              | Permission     | Reason                                                             |
-| ---------------------------------- | -------------- | ------------------------------------------------------------------ |
-| Repository permissions → Contents  | Read-only      | Allows the generated token to access repository content            |
-| Repository permissions → Issues    | Read and write | Allows comments, labels, issue lookup, and issue closure           |
-| Organization permissions → Members | Read and write | Allows `Onboard-ToGitHub.cs` to add members to the configured team |
-
-After registration, the script opens the app installation page. Install the app on the target organization and grant it access to the repository created from this template. App installation still requires organization-owner approval and cannot be completed by the manifest exchange alone.
-
-The organization must own or install the app for the organization-level `Members: write` permission to be available. A missing permission or installation causes GitHub onboarding to fail with HTTP 403. The private key is sent directly to `gh secret set` through standard input and is not written to disk by the script.
+This leaves repository visibility, pull-request availability, and PR merge settings unchanged.
 
 ### Create the default-branch ruleset
 
-Create this ruleset during Bootstrap issue 1 while authenticated with `gh` as a repository administrator or organization owner. It targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories.
+The initializer does not create rulesets because its `GITHUB_TOKEN` cannot administer repository settings. Create this ruleset with an administrator-authenticated `gh` session. It targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories.
 
 Check for an existing ruleset named `default` before creating another:
 
@@ -129,9 +95,63 @@ gh api --method POST \
   --input ./default-branch-ruleset.json
 ```
 
+### Configure the expected Entra tenant domain
+
+The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with the same domain.
+
+## Create the GitHub App
+
+**Bootstrap issue 2/5**
+
+The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on onboarding issues, changes labels, closes completed requests, and manages GitHub organization membership.
+
+`Setup-GitHubApp.cs` uses GitHub's [App Manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest). The script opens a browser for organization-owner approval, receives the temporary callback code on localhost, exchanges it for the App client ID and one-time private key, and writes `APP_CLIENT_ID` and `APP_PRIVATE_KEY` to the repository.
+
+`--app-name` sets the GitHub App's name. `onboarding-automation` is an example; replace it with the name you choose. The Azure app registration created in Bootstrap issue 4 is a separate resource and can have a different name.
+
+Authenticate `gh`, then run:
+
+```bash
+# zsh/bash
+gh auth login
+
+dotnet run --file ./scripts/Setup-GitHubApp.cs -- \
+  --app-name "onboarding-automation" \
+  --github-org "{{ORG_NAME}}" \
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+```powershell
+# PowerShell
+gh auth login
+
+dotnet run --file ./scripts/Setup-GitHubApp.cs -- `
+  --app-name "onboarding-automation" `
+  --github-org "{{ORG_NAME}}" `
+  --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+The script listens on `http://127.0.0.1:53682/` for up to 10 minutes. On a local machine, it registers a loopback callback URL with GitHub, so run the script on the same machine as the browser.
+
+In GitHub Codespaces, the script detects `CODESPACES=true` and registers `https://<codespace-name>-<port>.<forwarding-domain>/callback/` as the callback while continuing to listen on loopback. The default dev container forwards port `53682`. Run the setup command with `--no-open`, then open the forwarded registration URL printed by the script in a browser signed in to GitHub. Keep the port private so only your Codespaces user can access it. Use `--callback-port` to select another port; Codespaces will forward that port when the script prints its local listener URL.
+
+`--no-open` prevents the script from launching a browser. In Codespaces, the script always prints the forwarded URL for you to open manually.
+
+The manifest requests these permissions:
+
+| Scope                              | Permission     | Reason                                                             |
+| ---------------------------------- | -------------- | ------------------------------------------------------------------ |
+| Repository permissions → Contents  | Read-only      | Allows the generated token to access repository content            |
+| Repository permissions → Issues    | Read and write | Allows comments, labels, issue lookup, and issue closure           |
+| Organization permissions → Members | Read and write | Allows `Onboard-ToGitHub.cs` to add members to the configured team |
+
+After registration, the script opens the app installation page. Install the app on the target organization and grant it access to the repository created from this template. App installation still requires organization-owner approval and cannot be completed by the manifest exchange alone.
+
+The organization must own or install the app for the organization-level `Members: write` permission to be available. A missing permission or installation causes GitHub onboarding to fail with HTTP 403. The private key is sent directly to `gh secret set` through standard input and is not written to disk by the script.
+
 ## Create the GitHub onboarding team
 
-**Bootstrap issue 2/4**
+**Bootstrap issue 3/5**
 
 GitHub organization onboarding assigns each new member to a team. `Setup-GitHubTeam.cs` searches all visible organization teams for an exact name match, reuses the existing team when found, or creates a new team when absent. It then writes the numeric team ID to `GITHUB_TEAM_ID`.
 
@@ -163,7 +183,7 @@ The supported privacy values are `closed` and `secret`. On each successful onboa
 
 ## Create the Azure workload identity
 
-**Bootstrap issue 3/4**
+**Bootstrap issue 4/5**
 
 The Azure workflow uses OpenID Connect (OIDC) to exchange GitHub's short-lived identity token for an Azure access token. It does not require an Azure client secret.
 
@@ -180,11 +200,7 @@ The included setup script creates:
 
 The Graph permissions allow the workflow to onboard an external user, find the configured group, and add the user to it. The Azure IDs tell `azure/login` which workload identity, tenant, and subscription to use.
 
-`--app-name` sets the Microsoft Entra app registration's display name. `onboarding-automation` is an example; replace it with a descriptive name you choose. This app registration is separate from the GitHub App created in Bootstrap issue 1.
-
-### Configure the expected Entra tenant domain
-
-The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both `.github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml` and `.github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml`, and set `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` to the same domain.
+`--app-name` sets the Microsoft Entra app registration's display name. `onboarding-automation` is an example; replace it with a descriptive name you choose. This app registration is separate from the GitHub App created in Bootstrap issue 2.
 
 ### Prerequisites
 
@@ -235,7 +251,7 @@ Review the generated permissions for your environment. In particular, the setup 
 
 ## Create the Azure security group
 
-**Bootstrap issue 4/4**
+**Bootstrap issue 5/5**
 
 `AZURE_SECURITY_GROUP_ID` identifies the Microsoft Entra security group that receives each onboarded user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the user as a member.
 

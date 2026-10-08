@@ -1,12 +1,11 @@
-# [Bootstrap 1/4] Set up the GitHub App
+# [Bootstrap 2/5] Set up the GitHub App
 
-Configure the GitHub App used by the onboarding workflows and create the repository's default-branch ruleset. Complete this issue before setting up the onboarding team.
+Configure the GitHub App used by the onboarding workflows. Complete this issue before setting up the onboarding team.
 
 ## Steps
 
 - [ ] Review [Create the GitHub App](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#create-the-github-app).
 - [ ] Install the .NET 10 SDK and GitHub CLI, then authenticate `gh` as an organization owner.
-- [ ] Create the default-branch ruleset as an administrator by following [Create the default-branch ruleset](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#create-the-default-branch-ruleset).
 - [ ] Choose a name for the GitHub App and replace the example `onboarding-automation` value for `--app-name` in the command below.
 - [ ] Run the setup script:
 
