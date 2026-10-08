@@ -53,15 +53,15 @@ else
     Console.WriteLine($"Created security group '{options.GroupName}' ({groupId}).");
 }
 
-Console.WriteLine($"Saving AZURE_SECURITY_GROUP to repository '{options.GitHubRepo}'...");
+Console.WriteLine($"Saving AZURE_SECURITY_GROUP_ID to repository '{options.GitHubRepo}'...");
 await RunAsync(
     "gh",
-    "variable", "set", "AZURE_SECURITY_GROUP",
+    "variable", "set", "AZURE_SECURITY_GROUP_ID",
     "--body", groupId,
     "--repo", options.GitHubRepo);
 
 Console.WriteLine();
-Console.WriteLine($"AZURE_SECURITY_GROUP: {groupId}");
+Console.WriteLine($"AZURE_SECURITY_GROUP_ID: {groupId}");
 
 static void EnsureSecurityGroup(JsonElement group, string groupName)
 {
@@ -82,7 +82,7 @@ static string CreateMailNickname(string groupName)
             RegexOptions.CultureInvariant)
         .Trim('-');
     return string.IsNullOrWhiteSpace(nickname)
-        ? $"invitation-{Guid.NewGuid():N}"
+        ? $"onboarding-{Guid.NewGuid():N}"
         : nickname;
 }
 
@@ -162,7 +162,7 @@ sealed record Arguments(
             Required("--group-name"),
             values.TryGetValue("--description", out var description)
                 ? description
-                : "Users onboarded by the invitation workflow.",
+                : "Users onboarded by this workflow.",
             values.TryGetValue("--mail-nickname", out var mailNickname)
                 ? mailNickname
                 : null,

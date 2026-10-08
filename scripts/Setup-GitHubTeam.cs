@@ -25,7 +25,7 @@ using var client = new HttpClient
     BaseAddress = new Uri($"{apiUrl}/")
 };
 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-client.DefaultRequestHeaders.UserAgent.ParseAdd("devrel-kr-invitation-setup");
+client.DefaultRequestHeaders.UserAgent.ParseAdd("onboarding-template-setup");
 client.DefaultRequestHeaders.Accept.Add(
     new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
@@ -238,7 +238,7 @@ sealed record Arguments(
             Required("--team-name"),
             values.TryGetValue("--description", out var description)
                 ? description
-                : "Users onboarded by the invitation workflow.",
+                : "Users onboarded by this workflow.",
             privacy,
             repository);
 

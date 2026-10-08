@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text.Json;
 
 var options = Arguments.Parse(args);
-var invitationBody = JsonSerializer.Serialize(new
+var requestBody = JsonSerializer.Serialize(new
 {
     invitedUserEmailAddress = options.Email,
     inviteRedirectUrl = "https://portal.azure.com",
@@ -12,24 +12,24 @@ var invitationBody = JsonSerializer.Serialize(new
     invitedUserDisplayName = options.Name
 });
 
-var invitationJson = await RunAsync(
+var responseJson = await RunAsync(
     "az",
     "rest",
     "--method", "POST",
     "--url", "https://graph.microsoft.com/v1.0/invitations",
-    "--body", invitationBody,
+   "--body", requestBody,
     "--headers", "Content-Type=application/json");
 
-using var invitation = JsonDocument.Parse(invitationJson);
-if (!invitation.RootElement.TryGetProperty("invitedUser", out var invitedUser) ||
-    !invitedUser.TryGetProperty("id", out var idElement) ||
+using var response = JsonDocument.Parse(responseJson);
+if (!response.RootElement.TryGetProperty("invitedUser", out var userElement) ||
+   !userElement.TryGetProperty("id", out var idElement) ||
     string.IsNullOrWhiteSpace(idElement.GetString()))
 {
-    throw new InvalidDataException($"Azure invitation response did not contain an invited user ID.");
+   throw new InvalidDataException("Microsoft Graph response did not contain an onboarded user ID.");
 }
 
 var userId = idElement.GetString()!;
-Console.WriteLine($"Invited user ID: {userId}");
+Console.WriteLine($"Azure user ID: {userId}");
 
 var groupId = (await RunAsync(
     "az",
@@ -49,7 +49,7 @@ await RunAsync(
     "--member-id", userId);
 
 Console.WriteLine(
-    $"User '{options.Email}' invited and added to security group '{options.SecurityGroup}' successfully.");
+    $"User '{options.Email}' onboarded and added to security group '{options.SecurityGroup}' successfully.");
 
 static async Task<string> RunAsync(string fileName, params string[] arguments)
 {

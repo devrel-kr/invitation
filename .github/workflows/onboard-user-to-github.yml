@@ -1,4 +1,4 @@
-name: "Workflow: User Invitation to GitHub Organization"
+name: "Workflow: User Onboarding to GitHub Organization"
 
 on:
   issues:
@@ -15,25 +15,25 @@ permissions:
   issues: write
 
 jobs:
-  invite_user:
-    name: "Invite User to GitHub Organization"
+  onboard_user:
+    name: "Onboard User to GitHub Organization"
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      startsWith(github.event.issue.title, '[GitHub organization invitation request]') ||
-      startsWith(github.event.issue.title, '[GitHub 조직 초대 요청]')
+      (startsWith(github.event.issue.title, '[GitHub organization onboarding request]') ||
+       startsWith(github.event.issue.title, '[GitHub 조직 온보딩 요청]'))
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Generate bot token
-        id: bot-token
+      - name: Generate app token
+        id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.BOT_APP_ID }}
-          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: invitation
+          repositories: ${{ github.event.repository.name }}
           permission-contents: read
           permission-issues: write
           permission-members: write
@@ -52,51 +52,65 @@ jobs:
           github.event_name == 'workflow_dispatch'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.inputs.issue-number }}" \
             > "${{ github.workspace }}/payload.json"
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: "10.x"
 
       - name: Validate GitHub organization request
         id: issue
         shell: bash
         env:
-          DUE_DATE: ${{ vars.INVITATION_DUE_DATE }}
+          DUE_DATE: ${{ vars.ONBOARDING_DUE_DATE }}
+          EXPECTED_ORGANIZATION: ${{ github.repository_owner }}
         run: |
-          dotnet run --file ./scripts/Validate-InvitationRequest.cs -- \
+          due_date_args=()
+          if [[ -n "$DUE_DATE" ]]; then
+            due_date_args+=(--due-date "$DUE_DATE")
+          fi
+
+          dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
             --request-type github \
             --input "${{ github.workspace }}/payload.json" \
             --output "${{ github.workspace }}/issue.json" \
-            --due-date "$DUE_DATE" \
-            --organization "devrel-kr" \
-            --github-output "$GITHUB_OUTPUT"
+            --organization "$EXPECTED_ORGANIZATION" \
+            --github-output "$GITHUB_OUTPUT" \
+            "${due_date_args[@]}"
 
       - name: Comment to issue - Acknowledge
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "create-comment"
-          token: ${{ steps.bot-token.outputs.token }}
-          issue-number: ${{ steps.issue.outputs.issueNumber }}
-          emoji: "+1,rocket"
-          body: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
+          COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            We have received your GitHub organization invitation request and are reviewing it.
+            We have received your GitHub organization onboarding request and are reviewing it.
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$COMMENT_BODY" \
+            --repo "$GITHUB_REPOSITORY"
+
+          for reaction in '+1' rocket; do
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/reactions" \
+              -f content="$reaction" > /dev/null
+          done
 
       - name: Add label - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --add-label "invalid" \
@@ -105,43 +119,46 @@ jobs:
       - name: Comment to issue - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "create-comment"
-          token: ${{ steps.bot-token.outputs.token }}
-          issue-number: ${{ steps.issue.outputs.issueNumber }}
-          body: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
+          COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
             - Submitted at: ${{ steps.issue.outputs.submittedAt }}
-            - Due by: ${{ steps.issue.outputs.dueBy }}
+            ${{ steps.issue.outputs.dueBy && format('- Due by: {0}', steps.issue.outputs.dueBy) }}
 
-            Your GitHub organization invitation request is not valid for the following reasons:
+            Your GitHub organization onboarding request is not valid for the following reasons:
 
             ${{ steps.issue.outputs.invalidReasons }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$COMMENT_BODY" \
+            --repo "$GITHUB_REPOSITORY"
 
       - name: Close issue - Invalid
         if: |
           steps.issue.outputs.isValid == 'false'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
             -c "The submitted request is invalid. Closing this issue." \
             -R ${{ github.event.repository.full_name }}
 
-      - name: Invite user to GitHub organization
+      - name: Onboard user to GitHub organization
         if: |
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ORGANIZATION: ${{ steps.issue.outputs.org }}
           GITHUB_HANDLE: ${{ steps.issue.outputs.githubHandle }}
           TEAM_ID: ${{ vars.GITHUB_TEAM_ID }}
         run: |
-          dotnet run --file ./scripts/Invite-ToGitHub.cs -- \
+          dotnet run --file ./scripts/Onboard-ToGitHub.cs -- \
             --organization "$ORGANIZATION" \
             --github-handle "$GITHUB_HANDLE" \
             --team-id "$TEAM_ID"
@@ -151,7 +168,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --add-label "complete" \
@@ -162,7 +179,7 @@ jobs:
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue edit ${{ steps.issue.outputs.issueNumber }} \
             --remove-label "request" \
@@ -171,24 +188,32 @@ jobs:
       - name: Comment to issue - Complete
         if: |
           steps.issue.outputs.isValid == 'true'
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: "create-comment"
-          token: ${{ steps.bot-token.outputs.token }}
-          issue-number: ${{ steps.issue.outputs.issueNumber }}
-          emoji: "+1,rocket"
-          body: |
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
+          COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            A GitHub organization invitation has been sent to your account. After accepting the invitation, you can join the organization. Thank you!
+            Your GitHub organization onboarding is complete. Check your notifications and registered email for the steps to join the organization.
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --body "$COMMENT_BODY" \
+            --repo "$GITHUB_REPOSITORY"
+
+          for reaction in '+1' rocket; do
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$ISSUE_NUMBER/reactions" \
+              -f content="$reaction" > /dev/null
+          done
 
       - name: Close issue - Complete
         if: |
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "The GitHub organization invitation request is complete. Closing this issue." \
+            -c "The GitHub organization onboarding request is complete. Closing this issue." \
             -R ${{ github.event.repository.full_name }}

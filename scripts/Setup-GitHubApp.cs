@@ -9,8 +9,11 @@ using System.Text.Json;
 
 var options = Arguments.Parse(args);
 var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
-var callbackUrl = $"http://127.0.0.1:{options.CallbackPort}/callback/";
 var listenerUrl = $"http://127.0.0.1:{options.CallbackPort}/";
+var codespacesBaseUrl = GetCodespacesBaseUrl(options.CallbackPort);
+var registrationBaseUrl = codespacesBaseUrl ?? listenerUrl;
+var callbackUrl = new Uri(new Uri(registrationBaseUrl), "callback/").ToString();
+var canOpenBrowser = options.OpenBrowser && codespacesBaseUrl is null;
 var githubWebUrl = Environment.GetEnvironmentVariable("GH_WEB_URL")?.TrimEnd('/')
     ?? "https://github.com";
 var githubApiUrl = Environment.GetEnvironmentVariable("GH_API_URL")?.TrimEnd('/')
@@ -44,13 +47,17 @@ using var listener = new HttpListener();
 listener.Prefixes.Add(listenerUrl);
 listener.Start();
 
-Console.WriteLine($"Opening GitHub App registration for organization '{options.GitHubOrganization}'...");
-if (options.OpenBrowser)
+Console.WriteLine($"Preparing GitHub App registration for organization '{options.GitHubOrganization}'...");
+if (canOpenBrowser)
 {
-    OpenBrowser(listenerUrl);
+    OpenBrowser(registrationBaseUrl);
+}
+else
+{
+    Console.WriteLine($"Open this URL in your browser: {registrationBaseUrl}");
 }
 
-Console.WriteLine($"If the browser did not open, visit: {listenerUrl}");
+Console.WriteLine($"The local callback listener is running at {listenerUrl}");
 Console.WriteLine("Complete the GitHub approval within 10 minutes.");
 
 using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(10));
@@ -65,7 +72,7 @@ using var client = new HttpClient
 {
     BaseAddress = new Uri($"{githubApiUrl}/")
 };
-client.DefaultRequestHeaders.UserAgent.ParseAdd("devrel-kr-invitation-setup");
+client.DefaultRequestHeaders.UserAgent.ParseAdd("onboarding-template-setup");
 client.DefaultRequestHeaders.Accept.Add(
     new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
@@ -83,7 +90,7 @@ if (!conversionResponse.IsSuccessStatusCode)
 }
 
 using var conversion = JsonDocument.Parse(conversionContent);
-var appId = RequiredInt64(conversion.RootElement, "id");
+var clientId = RequiredString(conversion.RootElement, "client_id");
 var slug = RequiredString(conversion.RootElement, "slug");
 var privateKey = RequiredString(conversion.RootElement, "pem");
 
@@ -91,25 +98,57 @@ Console.WriteLine($"Saving GitHub App credentials to repository '{options.GitHub
 await RunAsync(
     null,
     "gh",
-    "variable", "set", "BOT_APP_ID",
-    "--body", appId.ToString(),
+    "variable", "set", "APP_CLIENT_ID",
+    "--body", clientId,
     "--repo", options.GitHubRepo);
 await RunAsync(
     privateKey,
     "gh",
-    "secret", "set", "BOT_PRIVATE_KEY",
+    "secret", "set", "APP_PRIVATE_KEY",
     "--repo", options.GitHubRepo);
 
 var installationUrl = $"{githubWebUrl}/apps/{Uri.EscapeDataString(slug)}/installations/new";
 Console.WriteLine();
 Console.WriteLine($"GitHub App '{slug}' created successfully.");
-Console.WriteLine($"BOT_APP_ID saved to {options.GitHubRepo}.");
-Console.WriteLine($"BOT_PRIVATE_KEY saved to {options.GitHubRepo}.");
+Console.WriteLine($"APP_CLIENT_ID saved to {options.GitHubRepo}.");
+Console.WriteLine($"APP_PRIVATE_KEY saved to {options.GitHubRepo}.");
 Console.WriteLine("Install the app on the organization and grant it access to the repository:");
 Console.WriteLine(installationUrl);
-if (options.OpenBrowser)
+if (canOpenBrowser)
 {
     OpenBrowser(installationUrl);
+}
+
+static string? GetCodespacesBaseUrl(int port)
+{
+    if (!string.Equals(
+            Environment.GetEnvironmentVariable("CODESPACES"),
+            "true",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    var codespaceName = Environment.GetEnvironmentVariable("CODESPACE_NAME");
+    var forwardingDomain = Environment.GetEnvironmentVariable("GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN");
+    if (string.IsNullOrWhiteSpace(codespaceName) ||
+        string.IsNullOrWhiteSpace(forwardingDomain))
+    {
+        throw new InvalidOperationException(
+            "CODESPACE_NAME and GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN are required in GitHub Codespaces.");
+    }
+
+    var expectedHost = $"{codespaceName}-{port}.{forwardingDomain}";
+    var forwardedUrl = $"https://{expectedHost}/";
+    if (!Uri.TryCreate(forwardedUrl, UriKind.Absolute, out var uri) ||
+        !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+        !string.Equals(uri.Host, expectedHost, StringComparison.OrdinalIgnoreCase))
+    {
+        throw new InvalidOperationException(
+            "GitHub Codespaces did not provide a valid HTTPS port-forwarding URL.");
+    }
+
+    return uri.ToString();
 }
 
 static async Task<string> ReceiveManifestCodeAsync(
@@ -215,17 +254,6 @@ static string RequiredString(JsonElement element, string propertyName)
     }
 
     return property.GetString()!;
-}
-
-static long RequiredInt64(JsonElement element, string propertyName)
-{
-    if (!element.TryGetProperty(propertyName, out var property) ||
-        !property.TryGetInt64(out var value))
-    {
-        throw new InvalidDataException($"Response did not contain numeric '{propertyName}'.");
-    }
-
-    return value;
 }
 
 static async Task<string> RunAsync(

@@ -29,7 +29,7 @@ await RunAsync("az", "ad", "sp", "create", "--id", appId);
 
 var federatedCredential = JsonSerializer.Serialize(new
 {
-    name = $"azure-invitation-github-actions-{Branch}",
+    name = $"azure-onboarding-github-actions-{Branch}",
     issuer = "https://token.actions.githubusercontent.com",
     subject = $"repo:{options.GitHubRepo}:ref:refs/heads/{Branch}",
     audiences = new[] { "api://AzureADTokenExchange" },

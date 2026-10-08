@@ -35,6 +35,10 @@
     }
   },
 
+  "forwardPorts": [
+    53682
+  ],
+
   "remoteUser": "vscode",
 
   "onCreateCommand": "/bin/bash ./.devcontainer/on-create.sh > ~/on-create.log"

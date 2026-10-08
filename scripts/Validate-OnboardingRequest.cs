@@ -16,7 +16,7 @@ var body = options.RequestType switch
     _ => throw new InvalidOperationException($"Unsupported request type: {options.RequestType}")
 };
 
-if (issue.CreatedAt > options.DueDate)
+if (options.DueDate is { } cutoff && issue.CreatedAt > cutoff)
 {
     body.InvalidReasons.Add("The submission deadline has passed.");
 }
@@ -32,12 +32,11 @@ if (!string.IsNullOrWhiteSpace(body.GitHubHandle) &&
 var result = new ValidationResult(
     issue.Number,
     ToKoreaTime(issue.CreatedAt),
-    ToKoreaTime(options.DueDate),
+    options.DueDate is { } configuredDueDate ? ToKoreaTime(configuredDueDate) : null,
     issue.CreatedBy,
     body.InvalidReasons.Count == 0,
     body.InvalidReasons,
-    new InvitationBody(
-        body.RequestType,
+    new OnboardingBody(
         body.Organisation,
         body.GitHubHandle,
         body.Name,
@@ -63,13 +62,12 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
 {
     var requestType = GetIssueFormValue(issueBody, "Request Type", "요청 유형");
     var organisation = GetIssueFormValue(issueBody, "Organization", "조직")?.TrimEnd('/');
-    var profileUrl = GetIssueFormValue(issueBody, "GitHub Profile Link", "GitHub 프로필 링크")?.TrimEnd('/');
     var name = GetIssueFormValue(issueBody, "Name", "이름");
     var email = GetIssueFormValue(issueBody, "Email", "이메일");
     var invalidReasons = new List<string>();
     var hasExpectedRequestType =
-        string.Equals(requestType, "Azure subscription invitation request", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "Azure 구독 초대 요청", StringComparison.OrdinalIgnoreCase);
+        string.Equals(requestType, "Azure subscription onboarding request", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(requestType, "Azure 구독 온보딩 요청", StringComparison.OrdinalIgnoreCase);
 
     if (!hasExpectedRequestType)
     {
@@ -82,11 +80,6 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
         invalidReasons.Add("The Azure organization URL is invalid.");
     }
 
-    if (!IsGitHubProfileUrl(profileUrl))
-    {
-        invalidReasons.Add("The GitHub profile URL is invalid.");
-    }
-
     if (string.IsNullOrWhiteSpace(name))
     {
         invalidReasons.Add("The name is invalid.");
@@ -97,11 +90,7 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
         invalidReasons.Add("The email address is invalid.");
     }
 
-    var githubHandle = profileUrl?.Replace("https://github.com/", "", StringComparison.Ordinal);
-    var normalizedRequestType = hasExpectedRequestType
-        ? "Azure subscription invitation request"
-        : requestType;
-    return new ValidatedBody(normalizedRequestType, organisation, githubHandle, name, email, invalidReasons);
+    return new ValidatedBody(organisation, null, name, email, invalidReasons);
 }
 
 static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganization)
@@ -111,8 +100,8 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
     var githubHandle = GetIssueFormValue(issueBody, "GitHub Handle", "GitHub 핸들");
     var invalidReasons = new List<string>();
     var hasExpectedRequestType =
-        string.Equals(requestType, "GitHub organization invitation request", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "GitHub 조직 초대 요청", StringComparison.OrdinalIgnoreCase);
+        string.Equals(requestType, "GitHub organization onboarding request", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(requestType, "GitHub 조직 온보딩 요청", StringComparison.OrdinalIgnoreCase);
 
     if (!hasExpectedRequestType)
     {
@@ -129,10 +118,7 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
         invalidReasons.Add("The GitHub handle is invalid.");
     }
 
-    var normalizedRequestType = hasExpectedRequestType
-        ? "GitHub organization invitation request"
-        : requestType;
-    return new ValidatedBody(normalizedRequestType, organisation, githubHandle, null, null, invalidReasons);
+    return new ValidatedBody(organisation, githubHandle, null, null, invalidReasons);
 }
 
 static string? GetIssueFormValue(string body, params string[] labels)
@@ -163,18 +149,6 @@ static bool IsGitHubHandle(string? handle) =>
         "^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$",
         RegexOptions.CultureInvariant);
 
-static bool IsGitHubProfileUrl(string? url)
-{
-    if (string.IsNullOrWhiteSpace(url) ||
-        !Uri.IsWellFormedUriString(url, UriKind.Absolute) ||
-        !url.StartsWith("https://github.com/", StringComparison.Ordinal))
-    {
-        return false;
-    }
-
-    return url.Split('/', StringSplitOptions.RemoveEmptyEntries).Length == 3;
-}
-
 static bool IsAllowedEmail(string? email)
 {
     if (string.IsNullOrWhiteSpace(email) || !MailAddress.TryCreate(email, out var address))
@@ -193,15 +167,19 @@ static void WriteGitHubOutputs(string path, ValidationResult result)
     var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Seoul");
     var submittedAt = TimeZoneInfo.ConvertTime(result.CreatedAt, timeZone)
         .ToString("yyyy-MM-dd HH:mm:ss.fff '+09:00'", CultureInfo.InvariantCulture);
-    var dueBy = TimeZoneInfo.ConvertTime(result.DueDate, timeZone)
-        .ToString("yyyy-MM-dd HH:mm:ss.fff '+09:00'", CultureInfo.InvariantCulture);
+    var dueBy = result.DueDate is { } dueDate
+        ? TimeZoneInfo.ConvertTime(dueDate, timeZone)
+            .ToString("yyyy-MM-dd HH:mm:ss.fff '+09:00'", CultureInfo.InvariantCulture)
+        : null;
     var invalidReasons = $"<ul><li> {string.Join("</li><li> ", result.InvalidReasons)}</li></ul>";
 
     using var writer = File.AppendText(path);
     WriteOutput(writer, "issueNumber", result.Number.ToString(CultureInfo.InvariantCulture));
-    WriteOutput(writer, "requestType", result.Body.RequestType);
     WriteOutput(writer, "submittedAt", submittedAt);
-    WriteOutput(writer, "dueBy", dueBy);
+    if (dueBy is not null)
+    {
+        WriteOutput(writer, "dueBy", dueBy);
+    }
     WriteOutput(writer, "isValid", result.IsValid.ToString().ToLowerInvariant());
     WriteOutput(writer, "invalidReasons", invalidReasons);
     WriteOutput(writer, "org", result.Body.Organisation);
@@ -228,7 +206,7 @@ sealed record Arguments(
     RequestType RequestType,
     string InputFile,
     string OutputFile,
-    DateTimeOffset DueDate,
+    DateTimeOffset? DueDate,
     string Organization,
     string? GitHubOutput)
 {
@@ -253,13 +231,20 @@ sealed record Arguments(
             var value => throw new ArgumentException($"Unsupported request type: {value}")
         };
 
-        if (!DateTimeOffset.TryParse(
-                Required("--due-date"),
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind,
-                out var dueDate))
+        DateTimeOffset? dueDate = null;
+        if (values.TryGetValue("--due-date", out var dueDateValue) &&
+            !string.IsNullOrWhiteSpace(dueDateValue))
         {
-            throw new ArgumentException("--due-date must be a valid ISO-8601 DateTimeOffset.");
+            if (!DateTimeOffset.TryParse(
+                    dueDateValue,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.RoundtripKind,
+                    out var parsedDueDate))
+            {
+                throw new ArgumentException("--due-date must be a valid ISO-8601 DateTimeOffset.");
+            }
+
+            dueDate = parsedDueDate;
         }
 
         return new Arguments(
@@ -312,15 +297,13 @@ sealed record IssuePayload(int Number, string Body, DateTimeOffset CreatedAt, st
 }
 
 sealed record ValidatedBody(
-    string? RequestType,
     string? Organisation,
     string? GitHubHandle,
     string? Name,
     string? Email,
     List<string> InvalidReasons);
 
-sealed record InvitationBody(
-    string? RequestType,
+sealed record OnboardingBody(
     string? Organisation,
     [property: JsonPropertyName("githubHandle")]
     string? GitHubHandle,
@@ -330,22 +313,48 @@ sealed record InvitationBody(
 sealed record ValidationResult(
     int Number,
     DateTimeOffset CreatedAt,
-    DateTimeOffset DueDate,
+    DateTimeOffset? DueDate,
     string CreatedBy,
     bool IsValid,
     IReadOnlyList<string> InvalidReasons,
-    InvitationBody Body);
+    OnboardingBody Body);
 
 static class ValidationConstants
 {
     public static readonly HashSet<string> AllowedEmailDomains =
         new(StringComparer.OrdinalIgnoreCase)
         {
+            "126.com",
+            "163.com",
+            "aol.com",
+            "daum.net",
+            "fastmail.com",
             "gmail.com",
+            "gmx.com",
+            "googlemail.com",
+            "hanmail.net",
+            "hotmail.com",
+            "icloud.com",
+            "kakao.com",
+            "live.com",
+            "mac.com",
+            "mail.com",
+            "me.com",
+            "msn.com",
+            "naver.com",
             "outlook.com",
             "outlook.kr",
-            "hotmail.com",
-            "naver.com",
-            "kakao.com"
+            "proton.me",
+            "protonmail.com",
+            "qq.com",
+            "t-online.de",
+            "tuta.com",
+            "tutanota.com",
+            "web.de",
+            "yahoo.co.jp",
+            "yahoo.co.uk",
+            "yahoo.com",
+            "yandex.com",
+            "yandex.ru"
         };
 }

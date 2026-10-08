@@ -29,7 +29,7 @@ using var client = new HttpClient
     BaseAddress = new Uri($"{apiUrl}/")
 };
 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-client.DefaultRequestHeaders.UserAgent.ParseAdd("devrel-kr-invitation");
+client.DefaultRequestHeaders.UserAgent.ParseAdd("onboarding-template");
 client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
 
@@ -50,9 +50,10 @@ if (!userDocument.RootElement.TryGetProperty("id", out var idElement) ||
 }
 
 Console.WriteLine(
-    $"Inviting GitHub user '{handle}' ({userId}) to organization '{options.Organization}' " +
+    $"Preparing organization onboarding for GitHub user '{handle}' ({userId}) " +
+    $"in organization '{options.Organization}' " +
     $"and team '{options.TeamId}'...");
-using var invitationBody = new StringContent(
+using var requestBody = new StringContent(
     JsonSerializer.Serialize(new
     {
         invitee_id = userId,
@@ -61,20 +62,20 @@ using var invitationBody = new StringContent(
     }),
     Encoding.UTF8,
     "application/json");
-using var invitationResponse = await client.PostAsync(
+using var membershipResponse = await client.PostAsync(
     $"orgs/{Uri.EscapeDataString(options.Organization)}/invitations",
-    invitationBody);
-var invitationContent = await invitationResponse.Content.ReadAsStringAsync();
-if (!invitationResponse.IsSuccessStatusCode)
+    requestBody);
+var responseContent = await membershipResponse.Content.ReadAsStringAsync();
+if (!membershipResponse.IsSuccessStatusCode)
 {
     throw new InvalidOperationException(
-        $"GitHub organization invitation failed ({(int)invitationResponse.StatusCode}): " +
-        invitationContent);
+        $"GitHub organization onboarding failed ({(int)membershipResponse.StatusCode}): " +
+        responseContent);
 }
 
 Console.WriteLine(
-    $"User '{handle}' invited to organization '{options.Organization}' and team " +
-    $"'{options.TeamId}' successfully.");
+    $"Onboarding was initiated for user '{handle}' in organization '{options.Organization}' " +
+    $"with team '{options.TeamId}'. The user must complete the membership flow before access is granted.");
 
 sealed record Arguments(string Organization, string GitHubHandle, long TeamId)
 {
