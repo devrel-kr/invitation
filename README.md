@@ -71,25 +71,6 @@ dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- `
 
 Use a mock payload when testing locally. Do not run onboarding scripts against production Azure or GitHub resources until the configuration and permissions have been reviewed.
 
-## Repository layout
-
-| Path | Purpose |
-| --- | --- |
-| `.github/ISSUE_TEMPLATE/` | English and Korean onboarding forms |
-| `.github/bootstrap-issues/` | Setup issue sources; removed after initialization |
-| `.github/workflows/init.yml` | One-time repository initialization; removed after successful initialization |
-| `.github/workflows/onboard-user-to-azure.yml` | Azure onboarding workflow |
-| `.github/workflows/onboard-user-to-github.yml` | GitHub organization onboarding workflow |
-| `docs/configuration.md` | Setup procedures, permissions, and repository configuration |
-| `scripts/Validate-OnboardingRequest.cs` | Shared request validator |
-| `scripts/Onboard-ToAzure.cs` | Azure user onboarding and group membership |
-| `scripts/Onboard-ToGitHub.cs` | GitHub organization onboarding and team assignment |
-| `scripts/Setup-GitHubApp.cs` | GitHub App manifest registration and credential setup |
-| `scripts/Setup-GitHubTeam.cs` | Idempotent GitHub team and repository-variable setup |
-| `scripts/Setup-EntraSecurityGroup.cs` | Idempotent Entra security group and repository-variable setup |
-| `scripts/Setup-ServicePrincipal.cs` | Azure OIDC and repository-variable setup |
-| `images/` | Images used by the GitHub Copilot pre-check guidance |
-
 ## Security and operational notes
 
 - Treat `APP_PRIVATE_KEY` as a production credential and rotate it according to your organization's policy.

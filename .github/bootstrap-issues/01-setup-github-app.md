@@ -6,12 +6,22 @@ Configure the GitHub App used by the onboarding workflows. Complete this issue b
 
 - [ ] Review [Create the GitHub App](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#create-the-github-app).
 - [ ] Install the .NET 10 SDK and GitHub CLI, then authenticate `gh` as an organization owner.
+- [ ] Choose a name for the GitHub App and replace the example `onboarding-automation` value for `--app-name` in the command below.
 - [ ] Run the setup script:
 
   ```bash
+  # zsh/bash
   dotnet run --file ./scripts/Setup-GitHubApp.cs -- \
     --app-name "onboarding-automation" \
     --github-org "{{ORG_NAME}}" \
+    --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+  ```
+
+  ```powershell
+  # PowerShell
+  dotnet run --file ./scripts/Setup-GitHubApp.cs -- `
+    --app-name "onboarding-automation" `
+    --github-org "{{ORG_NAME}}" `
     --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
   ```
 

@@ -6,12 +6,22 @@ Create or reuse the Microsoft Entra security group that receives Azure-onboarded
 
 - [ ] Review [Create the Azure security group](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#create-the-azure-security-group).
 - [ ] Sign in to the intended Azure tenant and authenticate `gh` for this repository.
+- [ ] Choose the intended security group display name; replace the example `onboarding-participants` value for `--group-name` in the command below if needed.
 - [ ] Run the setup script:
 
   ```bash
+  # zsh/bash
   dotnet run --file ./scripts/Setup-EntraSecurityGroup.cs -- \
     --group-name "onboarding-participants" \
     --description "Users onboarded by this workflow." \
+    --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+  ```
+
+  ```powershell
+  # PowerShell
+  dotnet run --file ./scripts/Setup-EntraSecurityGroup.cs -- `
+    --group-name "onboarding-participants" `
+    --description "Users onboarded by this workflow." `
     --github-repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
   ```
 
