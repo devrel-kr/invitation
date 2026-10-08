@@ -69,9 +69,7 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
     var invalidReasons = new List<string>();
     var hasExpectedRequestType =
         string.Equals(requestType, "Azure subscription onboarding request", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "Azure 구독 온보딩 요청", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "Azure subscription invitation request", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "Azure 구독 초대 요청", StringComparison.OrdinalIgnoreCase);
+        string.Equals(requestType, "Azure 구독 온보딩 요청", StringComparison.OrdinalIgnoreCase);
 
     if (!hasExpectedRequestType)
     {
@@ -114,9 +112,7 @@ static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganizatio
     var invalidReasons = new List<string>();
     var hasExpectedRequestType =
         string.Equals(requestType, "GitHub organization onboarding request", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "GitHub 조직 온보딩 요청", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "GitHub organization invitation request", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(requestType, "GitHub 조직 초대 요청", StringComparison.OrdinalIgnoreCase);
+        string.Equals(requestType, "GitHub 조직 온보딩 요청", StringComparison.OrdinalIgnoreCase);
 
     if (!hasExpectedRequestType)
     {
