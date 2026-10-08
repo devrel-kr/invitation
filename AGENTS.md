@@ -23,8 +23,7 @@ Keep repository-specific organization, tenant, subscription, and credential valu
 - The forms use `onboarding` and `request`; the workflows use `invalid` and `complete`. If a form or workflow adds or renames a label, update the label definitions in `init.yml`.
 - Bootstrap issue numbering, file prefixes, creation order, and the corresponding sections in `docs/configuration.md` must stay aligned. Preserve the section anchors linked from the bootstrap issues.
 - The initializer replaces `{{ORG_NAME}}` and `{{REPOSITORY_NAME}}` in the README, docs, issue forms, workflows other than `init.yml`, scripts, and bootstrap issue bodies. Keep `init.yml` excluded from its own replacement pass.
-- Create the default-branch ruleset manually in Bootstrap issue 1 with an administrator-authenticated `gh api` call. Keep it out of `init.yml`; the initializer's `GITHUB_TOKEN` cannot administer repository settings.
-- `scripts/Configure-DefaultBranchRuleset.cs` owns default-branch ruleset creation. Keep its behavior and the invocation guidance in Bootstrap issue 1 and `docs/configuration.md` aligned.
+- Create the default-branch ruleset during Bootstrap issue 1 with `scripts/Configure-DefaultBranchRuleset.cs` and an administrator-authenticated `gh` session. Keep it out of `init.yml`; the initializer's `GITHUB_TOKEN` cannot administer repository settings.
 - `{{ENTRA_TENANT_DOMAIN_NAME}}` is intentionally not replaced by initialization. Configure it with `scripts/Configure-EntraTenantDomain.cs` as described in Bootstrap issue 1.
 - `ONBOARDING_DUE_DATE` is optional. An unset value means ongoing onboarding; a configured non-empty value must be a valid ISO 8601 timestamp with an explicit offset.
 - Values such as `--app-name`, `--team-name`, and `--group-name` in setup examples are suggestions, not required constants. The setup scripts store generated IDs in repository variables; workflows use those IDs.
@@ -37,7 +36,7 @@ Keep repository-specific organization, tenant, subscription, and credential valu
 - Use the .NET 10 SDK selected by [global.json](./global.json). C# scripts are file-based; run them with `dotnet run --file ./scripts/<script>.cs -- ...`. There is currently no solution, project, or .NET test project.
 - For validator changes, use synthetic issue payloads and cover valid and invalid requests, both request types/localized forms when relevant, and deadlines both set and unset. Follow the example in the README's **Local validation** section.
 - For issue-form or workflow changes, validate the YAML and check that both language variants and related workflow behavior remain consistent. Do not add validation dependencies solely for a one-off check.
-- Run `git diff --check` before committing. Report the exact validation commands and outcomes; do not claim tests that were not run.
+- Run `git diff --check` before committing. Summarize the change and report exact validation commands and outcomes, including checks not run; do not claim unrun tests passed.
 - Setup scripts can create or modify real GitHub and Azure resources, teams, groups, variables, and secrets. Do not run them against real accounts or subscriptions unless explicitly requested; use mocks or controlled test resources for validation.
 
 ## Security
@@ -49,17 +48,13 @@ Keep repository-specific organization, tenant, subscription, and credential valu
 ## Documentation
 
 - Keep the README concise and user-oriented; put configuration procedures and permissions in `docs/configuration.md`.
-- When setup order, placeholders, labels, deadlines, scripts, or workflow behavior changes, update the corresponding guide and bootstrap issue instructions.
+- When placeholders, labels, deadlines, scripts, or workflow behavior change, update the corresponding guide and bootstrap issue instructions.
 - Do not replace template values in documentation with a particular organization's values unless the initializer is intended to do so.
 
 ## Git commits and pull requests
 
 - Make an atomic commit for each completed logical task or independent batch—not for every intermediate edit. Use Conventional Commit subjects such as `feat:`, `fix:`, `docs:`, `test:`, or `chore:`.
-- Create or use a task-specific branch for each job; never commit changes directly to `main`. After relevant checks pass, commit changes to that branch. Pushing the task branch to the remote is allowed; do not push directly to `main`. Stage only changes belonging to that task; preserve unrelated pre-existing work. Do not amend or force-push unless explicitly requested.
+- Create or use a task-specific branch for each job; never commit changes directly to `main`. After relevant checks pass, commit changes to that branch. Pushing the task branch to the remote is allowed; do not push directly to `main`.
+- Stage only task changes; verify no unrelated changes are staged and preserve unrelated work. Do not amend or force-push unless explicitly requested.
 - When asked to create or update a pull request, use [the repository PR template](./.github/PULL_REQUEST_TEMPLATE.md). Preserve its headings and checklist, replace placeholders with accurate details, and include validation commands with their results.
 - If the branch already has a pull request, push updates to that branch rather than creating a duplicate.
-
-## Before finishing
-
-- Check the working tree and ensure no unrelated changes were staged.
-- Summarize the implementation and validation performed, including any checks that could not be run.

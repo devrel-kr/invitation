@@ -9,6 +9,7 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
 - [ ] Apply the repository feature settings:
 
   ```bash
+  # zsh/bash
   gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" \
     --enable-wiki=false \
     --enable-discussions=false \
@@ -16,6 +17,18 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
     --enable-issues \
     --enable-squash-merge \
     --enable-merge-commit=false \
+    --enable-rebase-merge=false
+  ```
+
+  ```powershell
+  # PowerShell
+  gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" `
+    --enable-wiki=false `
+    --enable-discussions=false `
+    --enable-projects=false `
+    --enable-issues `
+    --enable-squash-merge `
+    --enable-merge-commit=false `
     --enable-rebase-merge=false
   ```
 

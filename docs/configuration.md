@@ -15,7 +15,7 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 | `AZURE_SUBSCRIPTION_ID`   | Repository variable          | Written by `Setup-ServicePrincipal.cs`                                              |
 | `AZURE_SECURITY_GROUP_ID` | Repository variable          | Written by `Setup-EntraSecurityGroup.cs`                                            |
 | `GITHUB_TEAM_ID`          | Repository variable          | Written by `Setup-GitHubTeam.cs`                                                    |
-| `ONBOARDING_DUE_DATE`     | Optional repository variable | Set an ISO 8601 timestamp to enforce a deadline; leave unset for ongoing onboarding |
+| `ONBOARDING_DUE_DATE`     | Optional repository variable | ISO 8601 deadline; leave unset for ongoing onboarding                             |
 
 ## Initialize a repository from this template
 
@@ -25,7 +25,7 @@ When a repository is created from this template, `.github/workflows/init.yml` ru
 - creates the numbered setup issues from `.github/bootstrap-issues` in order; and
 - commits the personalized files, then removes `init.yml` and the bootstrap issue source files.
 
-The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities or configure repository variables or secrets. It also does not create repository rulesets: its `GITHUB_TOKEN` can write repository contents and issues, but cannot administer repository settings. Bootstrap issue 1 creates the ruleset manually using an administrator-authenticated `gh` session. Complete the generated issues in order before accepting onboarding requests.
+The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities, repository variables, secrets, or rulesets. Its `GITHUB_TOKEN` cannot administer repository settings, so configure the ruleset in Bootstrap issue 1. Complete the generated issues in order before accepting onboarding requests.
 
 The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 1. See the matching section below and complete it before accepting Azure onboarding requests.
 
@@ -33,9 +33,10 @@ The Entra tenant domain cannot be inferred from GitHub repository metadata, so t
 
 **Bootstrap issue 1/5**
 
-Use `gh` as a repository administrator or organization owner to configure the repository features:
+Use `gh` authenticated as a repository administrator or organization owner to configure repository settings and create the default ruleset:
 
 ```bash
+# zsh/bash
 gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" \
   --enable-wiki=false \
   --enable-discussions=false \
@@ -46,25 +47,37 @@ gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" \
   --enable-rebase-merge=false
 ```
 
+```powershell
+# PowerShell
+gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" `
+  --enable-wiki=false `
+  --enable-discussions=false `
+  --enable-projects=false `
+  --enable-issues `
+  --enable-squash-merge `
+  --enable-merge-commit=false `
+  --enable-rebase-merge=false
+```
+
 This leaves repository visibility and pull-request availability unchanged; pull requests can be merged only with squash commits.
+
+The `./scripts/...` paths below assume the repository root is the current directory. From elsewhere, provide the path to the helper script.
 
 ### Create the default-branch ruleset
 
-The initializer does not create rulesets because its `GITHUB_TOKEN` cannot administer repository settings. Create this ruleset with an administrator-authenticated `gh` session. It targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories, and `RepositoryRole` actor ID `5` represents repository administrators.
+The default ruleset targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories; `RepositoryRole` actor ID `5` represents repository administrators.
 
-`Configure-DefaultBranchRuleset.cs` uses the authenticated `gh` session to check for an existing ruleset named `default`, then creates it if missing. The JSON payload is embedded in the file and passed to `gh api` through standard input. If a ruleset already exists, the helper makes no changes; verify that its settings match the requested configuration.
+The helper creates the `default` ruleset only if one is missing. If it finds an existing `default`, it leaves it unchanged; verify that the existing settings match the requested configuration.
 
 ```bash
 dotnet run --file ./scripts/Configure-DefaultBranchRuleset.cs -- --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
-The command assumes the repository root is the current directory. If invoking it elsewhere, provide the path to the helper script.
-
 ### Configure the expected Entra tenant domain
 
-The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with the same domain.
+The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal, not the tenant ID. The helper replaces `{{ENTRA_TENANT_DOMAIN_NAME}}` in both Azure issue forms and `EXPECTED_ORGANIZATION` in the workflow with the domain you provide.
 
-The command assumes the repository root is the current directory. If invoking it elsewhere, provide the path to the helper script. Replace the example domain with a verified domain:
+Replace the example domain with that verified value:
 
 ```bash
 dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"
@@ -293,7 +306,7 @@ gh variable list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 gh secret list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
-Confirm that all required values from the configuration overview are present. `ONBOARDING_DUE_DATE` is optional; it should be set only when you want requests to expire. GitHub does not reveal secret values after they are stored.
+Confirm that all required values from the configuration overview are present. GitHub does not reveal secret values after they are stored.
 
 Before accepting real requests:
 
