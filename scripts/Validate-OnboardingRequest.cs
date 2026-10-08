@@ -36,7 +36,7 @@ var result = new ValidationResult(
     issue.CreatedBy,
     body.InvalidReasons.Count == 0,
     body.InvalidReasons,
-    new InvitationBody(
+    new OnboardingBody(
         body.Organisation,
         body.GitHubHandle,
         body.Name,
@@ -310,7 +310,7 @@ sealed record ValidatedBody(
     string? Email,
     List<string> InvalidReasons);
 
-sealed record InvitationBody(
+sealed record OnboardingBody(
     string? Organisation,
     [property: JsonPropertyName("githubHandle")]
     string? GitHubHandle,
@@ -324,7 +324,7 @@ sealed record ValidationResult(
     string CreatedBy,
     bool IsValid,
     IReadOnlyList<string> InvalidReasons,
-    InvitationBody Body);
+    OnboardingBody Body);
 
 static class ValidationConstants
 {

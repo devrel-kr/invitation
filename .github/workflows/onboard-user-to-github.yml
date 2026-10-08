@@ -1,4 +1,4 @@
-name: "Workflow: User Invitation to GitHub Organization"
+name: "Workflow: User Onboarding to GitHub Organization"
 
 on:
   issues:
@@ -15,8 +15,8 @@ permissions:
   issues: write
 
 jobs:
-  invite_user:
-    name: "Invite User to GitHub Organization"
+  onboard_user:
+    name: "Onboard User to GitHub Organization"
 
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -33,7 +33,7 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: invitation
+          repositories: ${{ github.event.repository.name }}
           permission-contents: read
           permission-issues: write
           permission-members: write
@@ -70,13 +70,14 @@ jobs:
         shell: bash
         env:
           DUE_DATE: ${{ vars.ONBOARDING_DUE_DATE }}
+          EXPECTED_ORGANIZATION: ${{ github.repository_owner }}
         run: |
           dotnet run --file ./scripts/Validate-OnboardingRequest.cs -- \
             --request-type github \
             --input "${{ github.workspace }}/payload.json" \
             --output "${{ github.workspace }}/issue.json" \
             --due-date "$DUE_DATE" \
-            --organization "devrel-kr" \
+            --organization "$EXPECTED_ORGANIZATION" \
             --github-output "$GITHUB_OUTPUT"
 
       - name: Comment to issue - Acknowledge
@@ -87,7 +88,7 @@ jobs:
           COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            We have received your GitHub organization invitation request and are reviewing it.
+            We have received your GitHub organization onboarding request and are reviewing it.
         run: |
           gh issue comment "$ISSUE_NUMBER" \
             --body "$COMMENT_BODY" \
@@ -123,7 +124,7 @@ jobs:
             - Submitted at: ${{ steps.issue.outputs.submittedAt }}
             - Due by: ${{ steps.issue.outputs.dueBy }}
 
-            Your GitHub organization invitation request is not valid for the following reasons:
+            Your GitHub organization onboarding request is not valid for the following reasons:
 
             ${{ steps.issue.outputs.invalidReasons }}
         run: |
@@ -142,7 +143,7 @@ jobs:
             -c "The submitted request is invalid. Closing this issue." \
             -R ${{ github.event.repository.full_name }}
 
-      - name: Invite user to GitHub organization
+      - name: Onboard user to GitHub organization
         if: |
           steps.issue.outputs.isValid == 'true'
         shell: bash
@@ -189,7 +190,7 @@ jobs:
           COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            A GitHub organization invitation has been sent to your account. After accepting the invitation, you can join the organization. Thank you!
+            Your GitHub organization onboarding is complete. Check your notifications and registered email for the steps to join the organization.
         run: |
           gh issue comment "$ISSUE_NUMBER" \
             --body "$COMMENT_BODY" \
@@ -209,5 +210,5 @@ jobs:
           GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "The GitHub organization invitation request is complete. Closing this issue." \
+            -c "The GitHub organization onboarding request is complete. Closing this issue." \
             -R ${{ github.event.repository.full_name }}

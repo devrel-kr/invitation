@@ -5,7 +5,7 @@ description: Issue template for requesting onboarding to an Azure subscription.
 title: "[Azure subscription onboarding request] "
 
 labels:
-  - invitation
+  - onboarding
   - request
 
 body:
@@ -13,7 +13,7 @@ body:
     attributes:
       value: |
         <br/>
-        Welcome! Please complete the form below to request an Azure subscription invitation.
+        Welcome! Please complete the form below to request Azure subscription onboarding.
 
   - type: dropdown
     id: request-type
@@ -53,4 +53,4 @@ body:
     attributes:
       value: |
         <br/>
-        When you submit the request, an Azure subscription invitation will be sent to the email address you provide. After accepting the invitation, you can join the subscription.
+        When the onboarding workflow processes your request, Azure will email the address you provide a link to join the subscription. Open the link and complete the steps to get access.

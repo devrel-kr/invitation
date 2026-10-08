@@ -82,7 +82,7 @@ static string CreateMailNickname(string groupName)
             RegexOptions.CultureInvariant)
         .Trim('-');
     return string.IsNullOrWhiteSpace(nickname)
-        ? $"invitation-{Guid.NewGuid():N}"
+        ? $"onboarding-{Guid.NewGuid():N}"
         : nickname;
 }
 
@@ -162,7 +162,7 @@ sealed record Arguments(
             Required("--group-name"),
             values.TryGetValue("--description", out var description)
                 ? description
-                : "Users onboarded by the invitation workflow.",
+                : "Users onboarded by this workflow.",
             values.TryGetValue("--mail-nickname", out var mailNickname)
                 ? mailNickname
                 : null,

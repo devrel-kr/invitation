@@ -19,7 +19,7 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 
 ## Create the GitHub App
 
-The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on request issues, changes labels, closes completed requests, and sends GitHub organization invitations.
+The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on onboarding issues, changes labels, closes completed requests, and manages GitHub organization membership.
 
 `Setup-GitHubApp.cs` uses GitHub's [App Manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest). The script opens a browser for organization-owner approval, receives the temporary callback code on localhost, exchanges it for the App client ID and one-time private key, and writes `APP_CLIENT_ID` and `APP_PRIVATE_KEY` to the repository.
 
@@ -29,7 +29,7 @@ Authenticate `gh`, then run:
 gh auth login
 
 dotnet run --file ./scripts/Setup-GitHubApp.cs -- \
-  --app-name "invitation-automation" \
+  --app-name "onboarding-automation" \
   --github-org "OWNER" \
   --github-repo "OWNER/REPOSITORY"
 ```
@@ -44,28 +44,28 @@ The manifest requests these permissions:
    | --- | --- | --- |
    | Repository permissions → Contents | Read-only | Allows the generated token to access repository content |
    | Repository permissions → Issues | Read and write | Allows comments, labels, issue lookup, and issue closure |
-   | Organization permissions → Members | Read and write | Allows `Onboard-ToGitHub.cs` to invite members into the configured team |
+   | Organization permissions → Members | Read and write | Allows `Onboard-ToGitHub.cs` to add members to the configured team |
 
 After registration, the script opens the app installation page. Install the app on the target organization and grant it access to the repository created from this template. App installation still requires organization-owner approval and cannot be completed by the manifest exchange alone.
 
-The organization must own or install the app for the organization-level `Members: write` permission to be available. A missing permission or installation causes the GitHub invitation request to fail with HTTP 403. The private key is sent directly to `gh secret set` through standard input and is not written to disk by the script.
+The organization must own or install the app for the organization-level `Members: write` permission to be available. A missing permission or installation causes GitHub onboarding to fail with HTTP 403. The private key is sent directly to `gh secret set` through standard input and is not written to disk by the script.
 
 ## Create the GitHub onboarding team
 
-Every GitHub organization invitation must include a team. `Setup-GitHubTeam.cs` searches all visible organization teams for an exact name match, reuses the existing team when found, or creates a new team when absent. It then writes the numeric team ID to `GITHUB_TEAM_ID`.
+GitHub organization onboarding assigns each new member to a team. `Setup-GitHubTeam.cs` searches all visible organization teams for an exact name match, reuses the existing team when found, or creates a new team when absent. It then writes the numeric team ID to `GITHUB_TEAM_ID`.
 
 The authenticated GitHub user must be an organization member allowed to create teams and must be able to write Actions variables in the repository. Organization owners can restrict team creation to owners.
 
 ```bash
 dotnet run --file ./scripts/Setup-GitHubTeam.cs -- \
   --github-org "OWNER" \
-  --team-name "invitation-participants" \
-  --description "Users onboarded by the invitation workflow." \
+  --team-name "onboarding-participants" \
+  --description "Users onboarded by this workflow." \
   --privacy "closed" \
   --github-repo "OWNER/REPOSITORY"
 ```
 
-The supported privacy values are `closed` and `secret`. On each successful invitation, `Onboard-ToGitHub.cs` sends the configured team ID in the `team_ids` array, so GitHub adds the new member to that team after they accept the organization invitation.
+The supported privacy values are `closed` and `secret`. On each successful onboarding, `Onboard-ToGitHub.cs` sends the configured team ID in the `team_ids` array, so GitHub adds the new member to that team after they complete the organization membership flow.
 
 ## Create the Azure workload identity
 
@@ -82,7 +82,7 @@ The included setup script creates:
 - an Azure `Contributor` role assignment at subscription scope; and
 - the `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` repository variables.
 
-The Graph permissions allow the workflow to invite an external user, find the configured group, and add the invited user to it. The Azure IDs tell `azure/login` which workload identity, tenant, and subscription to use.
+The Graph permissions allow the workflow to onboard an external user, find the configured group, and add the user to it. The Azure IDs tell `azure/login` which workload identity, tenant, and subscription to use.
 
 ### Prerequisites
 
@@ -109,7 +109,7 @@ Run the setup script:
 
 ```bash
 dotnet run --file ./scripts/Setup-ServicePrincipal.cs -- \
-  --app-name "invitation-automation" \
+  --app-name "onboarding-automation" \
   --github-repo "OWNER/REPOSITORY"
 ```
 
@@ -121,24 +121,24 @@ repo:OWNER/REPOSITORY:ref:refs/heads/main
 
 If the workflow runs from a different branch, update the `Branch` constant in `Setup-ServicePrincipal.cs` before running it, or create an additional federated credential with the required subject.
 
-Review the generated permissions for your environment. In particular, the setup script currently grants `Contributor` at subscription scope. Replace it with a narrower custom role or scope if your invitation process does not require that level of Azure resource access.
+Review the generated permissions for your environment. In particular, the setup script currently grants `Contributor` at subscription scope. Replace it with a narrower custom role or scope if your onboarding process does not require that level of Azure resource access.
 
 ## Create the Azure security group
 
-`AZURE_SECURITY_GROUP` identifies the Microsoft Entra security group that receives each invited user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the invited user as a member.
+`AZURE_SECURITY_GROUP` identifies the Microsoft Entra security group that receives each onboarded user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the user as a member.
 
 `Setup-EntraSecurityGroup.cs` searches for an exact display-name match, reuses an existing security-enabled group, or creates a new security group. It fails when duplicate display names make the result ambiguous or when the existing group is not security-enabled. The script stores the group object ID in `AZURE_SECURITY_GROUP`.
 
 ```bash
 dotnet run --file ./scripts/Setup-EntraSecurityGroup.cs -- \
-  --group-name "invitation-participants" \
-  --description "Users onboarded by the invitation workflow." \
+  --group-name "onboarding-participants" \
+  --description "Users onboarded by this workflow." \
   --github-repo "OWNER/REPOSITORY"
 ```
 
 The script derives a mail nickname from the display name. Use `--mail-nickname` to provide one explicitly. Use a dedicated group whose access assignments match the intended onboarding scope. The automation identity needs permission to read the group and update its membership.
 
-## Set the invitation deadline
+## Set the onboarding deadline
 
 `ONBOARDING_DUE_DATE` is the last accepted submission time. Both workflows pass it to the shared validator, which rejects requests submitted after the deadline.
 
@@ -172,4 +172,4 @@ Before accepting real requests:
 5. Confirm that `AZURE_SECURITY_GROUP` identifies the intended security group and that the automation identity can update it.
 6. Run each workflow manually with a controlled test issue.
 
-Review workflow logs for authentication or permission errors, and remove test invitations when finished.
+Review workflow logs for authentication or permission errors, and remove test accounts when finished.

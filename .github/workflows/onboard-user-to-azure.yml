@@ -1,4 +1,4 @@
-name: "Workflow: User Invitation to Azure Subscription"
+name: "Workflow: User Onboarding to Azure Subscription"
 
 on:
   issues:
@@ -17,8 +17,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  invite_user:
-    name: "Invite User to Azure Subscription"
+  onboard_user:
+    name: "Onboard User to Azure Subscription"
 
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -35,7 +35,7 @@ jobs:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-          repositories: invitation
+          repositories: ${{ github.event.repository.name }}
           permission-contents: read
           permission-issues: write
 
@@ -152,18 +152,18 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Invite user to Azure tenant
+      - name: Onboard user to Azure subscription
         if: |
           steps.issue.outputs.isValid == 'true'
         shell: bash
         env:
-          INVITEE_EMAIL: ${{ steps.issue.outputs.email }}
-          INVITEE_NAME: ${{ steps.issue.outputs.name }}
+          USER_EMAIL: ${{ steps.issue.outputs.email }}
+          USER_NAME: ${{ steps.issue.outputs.name }}
           SECURITY_GROUP: ${{ vars.AZURE_SECURITY_GROUP }}
         run: |
           dotnet run --file ./scripts/Onboard-ToAzure.cs -- \
-            --email "$INVITEE_EMAIL" \
-            --name "$INVITEE_NAME" \
+            --email "$USER_EMAIL" \
+            --name "$USER_NAME" \
             --security-group "$SECURITY_GROUP"
 
       - name: Add label - Complete
@@ -198,7 +198,7 @@ jobs:
           COMMENT_BODY: |
             👋🏼 @${{ steps.issue.outputs.githubHandle }}!
 
-            An invitation has been sent to the email address you provided. After accepting the invitation, you can join the subscription.
+            Access instructions have been sent to the email address you provided. Follow those instructions to join the subscription.
         run: |
           gh issue comment "$ISSUE_NUMBER" \
             --body "$COMMENT_BODY" \
@@ -218,5 +218,5 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh issue close ${{ steps.issue.outputs.issueNumber }} \
-            -c "The invitation request is complete. Closing this issue." \
+            -c "The onboarding request is complete. Closing this issue." \
             -R ${{ github.event.repository.full_name }}

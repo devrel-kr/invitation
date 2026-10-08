@@ -65,7 +65,7 @@ using var client = new HttpClient
 {
     BaseAddress = new Uri($"{githubApiUrl}/")
 };
-client.DefaultRequestHeaders.UserAgent.ParseAdd("devrel-kr-invitation-setup");
+client.DefaultRequestHeaders.UserAgent.ParseAdd("onboarding-template-setup");
 client.DefaultRequestHeaders.Accept.Add(
     new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
 client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
