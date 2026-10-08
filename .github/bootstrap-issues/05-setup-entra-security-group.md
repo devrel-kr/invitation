@@ -1,6 +1,6 @@
-# [Bootstrap 4/4] Set up the Microsoft Entra security group
+# [Bootstrap 5/5] Set up the Microsoft Entra security group
 
-Create or reuse the Microsoft Entra security group that receives Azure-onboarded users, then finish the remaining Azure configuration. Complete [Bootstrap 3/4](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first so the Azure workload identity is ready.
+Create or reuse the Microsoft Entra security group that receives Azure-onboarded users, then finish the remaining Azure configuration. Complete [Bootstrap 4/5](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first so the Azure workload identity is ready.
 
 ## Steps
 

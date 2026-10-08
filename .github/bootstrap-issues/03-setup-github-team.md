@@ -1,6 +1,6 @@
-# [Bootstrap 2/4] Set up the GitHub onboarding team
+# [Bootstrap 3/5] Set up the GitHub onboarding team
 
-Create or reuse the team that receives users after GitHub organization onboarding. Complete [Bootstrap 1/4](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first so the GitHub App is ready for the onboarding workflow.
+Create or reuse the team that receives users after GitHub organization onboarding. Complete [Bootstrap 2/5](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first so the GitHub App is ready for the onboarding workflow.
 
 ## Steps
 
@@ -30,4 +30,4 @@ Create or reuse the team that receives users after GitHub organization onboardin
   ```
 
 - [ ] Confirm `GITHUB_TEAM_ID` is set as a repository variable and identifies the intended team.
-- [ ] Confirm the GitHub App from Bootstrap 1/4 is installed on the organization.
+- [ ] Confirm the GitHub App from Bootstrap 2/5 is installed on the organization.

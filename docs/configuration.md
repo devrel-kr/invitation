@@ -15,7 +15,7 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 | `AZURE_SUBSCRIPTION_ID`   | Repository variable          | Written by `Setup-ServicePrincipal.cs`                                              |
 | `AZURE_SECURITY_GROUP_ID` | Repository variable          | Written by `Setup-EntraSecurityGroup.cs`                                            |
 | `GITHUB_TEAM_ID`          | Repository variable          | Written by `Setup-GitHubTeam.cs`                                                    |
-| `ONBOARDING_DUE_DATE`     | Optional repository variable | Set an ISO 8601 timestamp to enforce a deadline; leave unset for ongoing onboarding |
+| `ONBOARDING_DUE_DATE`     | Optional repository variable | ISO 8601 deadline; leave unset for ongoing onboarding                             |
 
 ## Initialize a repository from this template
 
@@ -25,19 +25,75 @@ When a repository is created from this template, `.github/workflows/init.yml` ru
 - creates the numbered setup issues from `.github/bootstrap-issues` in order; and
 - commits the personalized files, then removes `init.yml` and the bootstrap issue source files.
 
-The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities or configure repository variables or secrets. Complete the generated issues in order before accepting onboarding requests.
+The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities, repository variables, secrets, or rulesets. Its `GITHUB_TOKEN` cannot administer repository settings, so configure the ruleset in Bootstrap issue 1. Complete the generated issues in order before accepting onboarding requests.
 
-The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 3. See the matching section below and complete it before accepting Azure onboarding requests.
+The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 1. See the matching section below and complete it before accepting Azure onboarding requests.
+
+## Configure repository settings
+
+**Bootstrap issue 1/5**
+
+Use `gh` authenticated as a repository administrator or organization owner to configure repository settings and create the default ruleset:
+
+```bash
+# zsh/bash
+gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" \
+  --enable-wiki=false \
+  --enable-discussions=false \
+  --enable-projects=false \
+  --enable-issues \
+  --enable-squash-merge \
+  --enable-merge-commit=false \
+  --enable-rebase-merge=false
+```
+
+```powershell
+# PowerShell
+gh repo edit "{{ORG_NAME}}/{{REPOSITORY_NAME}}" `
+  --enable-wiki=false `
+  --enable-discussions=false `
+  --enable-projects=false `
+  --enable-issues `
+  --enable-squash-merge `
+  --enable-merge-commit=false `
+  --enable-rebase-merge=false
+```
+
+This leaves repository visibility and pull-request availability unchanged; pull requests can be merged only with squash commits.
+
+The `./scripts/...` paths below assume the repository root is the current directory. From elsewhere, provide the path to the helper script.
+
+### Create the default-branch ruleset
+
+The default ruleset targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories; `RepositoryRole` actor ID `5` represents repository administrators.
+
+The helper creates the `default` ruleset only if one is missing. If it finds an existing `default`, it leaves it unchanged; verify that the existing settings match the requested configuration.
+
+```bash
+dotnet run --file ./scripts/Configure-DefaultBranchRuleset.cs -- --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+### Configure the expected Entra tenant domain
+
+The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal, not the tenant ID. The helper replaces `{{ENTRA_TENANT_DOMAIN_NAME}}` in both Azure issue forms and `EXPECTED_ORGANIZATION` in the workflow with the domain you provide.
+
+Replace the example domain with that verified value:
+
+```bash
+dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"
+```
+
+The helper validates the domain, updates both Azure issue forms and `EXPECTED_ORGANIZATION` in the Azure workflow, and is safe to rerun with the same domain. It fails if one of the expected placeholders or already-configured values is missing.
 
 ## Create the GitHub App
 
-**Bootstrap issue 1/4**
+**Bootstrap issue 2/5**
 
 The workflows use a GitHub App instead of the repository's default `GITHUB_TOKEN` because the generated installation token can operate across the repository and its owning organization. The app comments on onboarding issues, changes labels, closes completed requests, and manages GitHub organization membership.
 
 `Setup-GitHubApp.cs` uses GitHub's [App Manifest flow](https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest). The script opens a browser for organization-owner approval, receives the temporary callback code on localhost, exchanges it for the App client ID and one-time private key, and writes `APP_CLIENT_ID` and `APP_PRIVATE_KEY` to the repository.
 
-`--app-name` sets the GitHub App's name. `onboarding-automation` is an example; replace it with the name you choose. The Azure app registration created in Bootstrap issue 3 is a separate resource and can have a different name.
+`--app-name` sets the GitHub App's name. `onboarding-automation` is an example; replace it with the name you choose. The Azure app registration created in Bootstrap issue 4 is a separate resource and can have a different name.
 
 Authenticate `gh`, then run:
 
@@ -81,7 +137,7 @@ The organization must own or install the app for the organization-level `Members
 
 ## Create the GitHub onboarding team
 
-**Bootstrap issue 2/4**
+**Bootstrap issue 3/5**
 
 GitHub organization onboarding assigns each new member to a team. `Setup-GitHubTeam.cs` searches all visible organization teams for an exact name match, reuses the existing team when found, or creates a new team when absent. It then writes the numeric team ID to `GITHUB_TEAM_ID`.
 
@@ -113,7 +169,7 @@ The supported privacy values are `closed` and `secret`. On each successful onboa
 
 ## Create the Azure workload identity
 
-**Bootstrap issue 3/4**
+**Bootstrap issue 4/5**
 
 The Azure workflow uses OpenID Connect (OIDC) to exchange GitHub's short-lived identity token for an Azure access token. It does not require an Azure client secret.
 
@@ -130,11 +186,7 @@ The included setup script creates:
 
 The Graph permissions allow the workflow to onboard an external user, find the configured group, and add the user to it. The Azure IDs tell `azure/login` which workload identity, tenant, and subscription to use.
 
-`--app-name` sets the Microsoft Entra app registration's display name. `onboarding-automation` is an example; replace it with a descriptive name you choose. This app registration is separate from the GitHub App created in Bootstrap issue 1.
-
-### Configure the expected Entra tenant domain
-
-The Azure validator checks that the submitted organization matches the configured tenant domain. Use a verified domain from the same tenant as the service principal; this is different from the tenant ID. Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` value in both `.github/ISSUE_TEMPLATE/onboarding-request-azure-en.yml` and `.github/ISSUE_TEMPLATE/onboarding-request-azure-ko.yml`, and set `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` to the same domain.
+`--app-name` sets the Microsoft Entra app registration's display name. `onboarding-automation` is an example; replace it with a descriptive name you choose. This app registration is separate from the GitHub App created in Bootstrap issue 2.
 
 ### Prerequisites
 
@@ -185,7 +237,7 @@ Review the generated permissions for your environment. In particular, the setup 
 
 ## Create the Azure security group
 
-**Bootstrap issue 4/4**
+**Bootstrap issue 5/5**
 
 `AZURE_SECURITY_GROUP_ID` identifies the Microsoft Entra security group that receives each onboarded user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the user as a member.
 
@@ -254,7 +306,7 @@ gh variable list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 gh secret list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
-Confirm that all required values from the configuration overview are present. `ONBOARDING_DUE_DATE` is optional; it should be set only when you want requests to expire. GitHub does not reveal secret values after they are stored.
+Confirm that all required values from the configuration overview are present. GitHub does not reveal secret values after they are stored.
 
 Before accepting real requests:
 

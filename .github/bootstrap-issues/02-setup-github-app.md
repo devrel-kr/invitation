@@ -1,6 +1,6 @@
-# [Bootstrap 1/4] Set up the GitHub App
+# [Bootstrap 2/5] Set up the GitHub App
 
-Configure the GitHub App used by the onboarding workflows. Complete this issue before setting up the onboarding team.
+Configure the GitHub App used by the onboarding workflows. Complete [Bootstrap 1/5](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/issues) first to configure repository settings and the Entra tenant domain.
 
 ## Steps
 
