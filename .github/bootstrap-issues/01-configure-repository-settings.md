@@ -20,7 +20,39 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   ```
 
   This leaves repository visibility and pull-request availability unchanged; pull requests can be merged only with squash commits.
-- [ ] Check for an existing `default` ruleset with `gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"`. If none exists, save the JSON payload in [Create the default-branch ruleset](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#create-the-default-branch-ruleset) locally as `default-branch-ruleset.json` (do not commit it), then create the ruleset:
+- [ ] Check for an existing `default` ruleset with `gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"`. If none exists, save this payload locally as `default-branch-ruleset.json` (do not commit it):
+
+  ```json
+  {
+    "name": "default",
+    "target": "branch",
+    "enforcement": "active",
+    "bypass_actors": [
+      {
+        "actor_id": null,
+        "actor_type": "OrganizationAdmin",
+        "bypass_mode": "always"
+      },
+      {
+        "actor_id": 5,
+        "actor_type": "RepositoryRole",
+        "bypass_mode": "always"
+      }
+    ],
+    "conditions": {
+      "ref_name": {
+        "include": ["~DEFAULT_BRANCH"],
+        "exclude": []
+      }
+    },
+    "rules": [
+      { "type": "deletion" },
+      { "type": "non_fast_forward" }
+    ]
+  }
+  ```
+
+  Then create the ruleset with `gh api`:
 
   ```bash
   gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input ./default-branch-ruleset.json

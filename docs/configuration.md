@@ -92,6 +92,8 @@ Save this payload locally as `default-branch-ruleset.json` (do not commit it):
 
 `RepositoryRole` actor ID `5` represents repository administrators. Create the ruleset with `gh api`:
 
+The payload is also included in Bootstrap issue 1 so it can be copied directly from the task; keep both copies aligned.
+
 ```bash
 gh api --method POST \
   "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
