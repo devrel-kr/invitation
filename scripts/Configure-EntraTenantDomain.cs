@@ -1,5 +1,6 @@
 #:property PublishAot=false
 
+using System.Runtime.CompilerServices;
 using System.Text;
 
 var options = Arguments.Parse(args);
@@ -8,17 +9,18 @@ if (Uri.CheckHostName(options.TenantDomain) != UriHostNameType.Dns)
     throw new ArgumentException("--tenant-domain must be a DNS domain name.");
 }
 
+var repositoryRoot = FindRepositoryRoot();
 const string placeholder = "{{ENTRA_TENANT_DOMAIN_NAME}}";
 var targets = new[]
 {
     new TenantDomainFile(
-        Path.Combine(".github", "ISSUE_TEMPLATE", "onboarding-request-azure-en.yml"),
+        Path.Combine(repositoryRoot, ".github", "ISSUE_TEMPLATE", "onboarding-request-azure-en.yml"),
         $"- \"{options.TenantDomain}\""),
     new TenantDomainFile(
-        Path.Combine(".github", "ISSUE_TEMPLATE", "onboarding-request-azure-ko.yml"),
+        Path.Combine(repositoryRoot, ".github", "ISSUE_TEMPLATE", "onboarding-request-azure-ko.yml"),
         $"- \"{options.TenantDomain}\""),
     new TenantDomainFile(
-        Path.Combine(".github", "workflows", "onboard-user-to-azure.yml"),
+        Path.Combine(repositoryRoot, ".github", "workflows", "onboard-user-to-azure.yml"),
         $"EXPECTED_ORGANIZATION: \"{options.TenantDomain}\"")
 };
 var updates = new List<(string Path, string Content)>();
@@ -55,6 +57,28 @@ foreach (var update in updates)
 {
     File.WriteAllText(update.Path, update.Content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     Console.WriteLine($"Configured tenant domain in '{update.Path}'.");
+}
+
+static string FindRepositoryRoot([CallerFilePath] string sourceFilePath = "")
+{
+    if (string.IsNullOrWhiteSpace(sourceFilePath))
+    {
+        throw new InvalidOperationException("The helper source-file path was not available.");
+    }
+
+    var directory = new FileInfo(Path.GetFullPath(sourceFilePath)).Directory;
+    while (directory is not null)
+    {
+        if (File.Exists(Path.Combine(directory.FullName, "global.json")))
+        {
+            return directory.FullName;
+        }
+
+        directory = directory.Parent;
+    }
+
+    throw new DirectoryNotFoundException(
+        $"Could not find the repository root containing 'global.json' from '{sourceFilePath}'.");
 }
 
 sealed record TenantDomainFile(string Path, string ConfiguredValue);

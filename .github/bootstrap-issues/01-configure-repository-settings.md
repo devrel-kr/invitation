@@ -74,7 +74,7 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   '@
   $rulesetJson | gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input -
   ```
-- [ ] Configure the verified Entra tenant domain by running this command from the repository root, replacing the example domain:
+- [ ] Configure the verified Entra tenant domain by replacing the example domain and running this command. The helper locates the repository root by searching upward from its source file for `global.json`; when running it from outside the repository, provide the path to the helper script.
 
   ```bash
   dotnet run --file ./scripts/Configure-EntraTenantDomain.cs -- --tenant-domain "contoso.onmicrosoft.com"
