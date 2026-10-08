@@ -74,7 +74,7 @@ The workflows use the following GitHub Actions configuration:
 | `AZURE_CLIENT_ID` | Variable | Azure workflow | Identifies the Microsoft Entra application used for GitHub Actions OIDC sign-in |
 | `AZURE_TENANT_ID` | Variable | Azure workflow | Selects the Microsoft Entra tenant for onboarding |
 | `AZURE_SUBSCRIPTION_ID` | Variable | Azure workflow | Selects the Azure subscription associated with the workflow identity |
-| `AZURE_SECURITY_GROUP` | Variable | Azure workflow | Identifies the group that receives onboarded users |
+| `AZURE_SECURITY_GROUP_ID` | Variable | Azure workflow | Identifies the group that receives onboarded users |
 | `GITHUB_TEAM_ID` | Variable | GitHub workflow | Identifies the required team for onboarded organization members |
 | `ONBOARDING_DUE_DATE` | Variable | Both workflows | Rejects requests submitted after the program deadline |
 

@@ -13,7 +13,7 @@ Configure the values in **Repository settings → Secrets and variables → Acti
 | `AZURE_CLIENT_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
 | `AZURE_TENANT_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
 | `AZURE_SUBSCRIPTION_ID` | Repository variable | Written by `Setup-ServicePrincipal.cs` |
-| `AZURE_SECURITY_GROUP` | Repository variable | Written by `Setup-EntraSecurityGroup.cs` |
+| `AZURE_SECURITY_GROUP_ID` | Repository variable | Written by `Setup-EntraSecurityGroup.cs` |
 | `GITHUB_TEAM_ID` | Repository variable | Written by `Setup-GitHubTeam.cs` |
 | `ONBOARDING_DUE_DATE` | Repository variable | Set manually as an ISO 8601 timestamp |
 
@@ -125,9 +125,9 @@ Review the generated permissions for your environment. In particular, the setup 
 
 ## Create the Azure security group
 
-`AZURE_SECURITY_GROUP` identifies the Microsoft Entra security group that receives each onboarded user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the user as a member.
+`AZURE_SECURITY_GROUP_ID` identifies the Microsoft Entra security group that receives each onboarded user. `Onboard-ToAzure.cs` resolves the value with `az ad group show` and then adds the user as a member.
 
-`Setup-EntraSecurityGroup.cs` searches for an exact display-name match, reuses an existing security-enabled group, or creates a new security group. It fails when duplicate display names make the result ambiguous or when the existing group is not security-enabled. The script stores the group object ID in `AZURE_SECURITY_GROUP`.
+`Setup-EntraSecurityGroup.cs` searches for an exact display-name match, reuses an existing security-enabled group, or creates a new security group. It fails when duplicate display names make the result ambiguous or when the existing group is not security-enabled. The script stores the group object ID in `AZURE_SECURITY_GROUP_ID`.
 
 ```bash
 dotnet run --file ./scripts/Setup-EntraSecurityGroup.cs -- \
@@ -169,7 +169,7 @@ Before accepting real requests:
 2. Verify that the app has `Issues: write` and organization `Members: write`.
 3. Confirm that `GITHUB_TEAM_ID` identifies the intended organization team.
 4. Open the Azure app registration and verify its federated credential and Microsoft Graph permissions.
-5. Confirm that `AZURE_SECURITY_GROUP` identifies the intended security group and that the automation identity can update it.
+5. Confirm that `AZURE_SECURITY_GROUP_ID` identifies the intended security group and that the automation identity can update it.
 6. Run each workflow manually with a controlled test issue.
 
 Review workflow logs for authentication or permission errors, and remove test accounts when finished.
