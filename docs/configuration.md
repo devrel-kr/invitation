@@ -66,16 +66,8 @@ Save this payload locally as `default-branch-ruleset.json` (do not commit it):
   "target": "branch",
   "enforcement": "active",
   "bypass_actors": [
-    {
-      "actor_id": null,
-      "actor_type": "OrganizationAdmin",
-      "bypass_mode": "always"
-    },
-    {
-      "actor_id": 5,
-      "actor_type": "RepositoryRole",
-      "bypass_mode": "always"
-    }
+    {"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always"},
+    {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
   ],
   "conditions": {
     "ref_name": {
