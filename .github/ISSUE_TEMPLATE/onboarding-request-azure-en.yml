@@ -45,7 +45,7 @@ body:
     id: email
     attributes:
       label: Email
-      placeholder: jane.developer@gmail.com (use a personal email such as gmail.com or outlook.com, not a work email)
+      placeholder: "jane.developer@gmail.com (use a personal email from one of these domains: gmail.com, outlook.com, outlook.kr, hotmail.com, naver.com, or kakao.com; work email is not allowed)"
     validations:
       required: true
 
@@ -53,4 +53,4 @@ body:
     attributes:
       value: |
         <br/>
-        When the onboarding workflow processes your request, Azure will email the address you provide a link to join the subscription. Open the link and complete the steps to get access.
+        When the onboarding workflow processes your request, Azure will email the address you provide a link to join the subscription. Open the link and complete the steps to get access. Thank you!
