@@ -62,7 +62,6 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
 {
     var requestType = GetIssueFormValue(issueBody, "Request Type", "요청 유형");
     var organisation = GetIssueFormValue(issueBody, "Organization", "조직")?.TrimEnd('/');
-    var profileUrl = GetIssueFormValue(issueBody, "GitHub Profile Link", "GitHub 프로필 링크")?.TrimEnd('/');
     var name = GetIssueFormValue(issueBody, "Name", "이름");
     var email = GetIssueFormValue(issueBody, "Email", "이메일");
     var invalidReasons = new List<string>();
@@ -81,11 +80,6 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
         invalidReasons.Add("The Azure organization URL is invalid.");
     }
 
-    if (!IsGitHubProfileUrl(profileUrl))
-    {
-        invalidReasons.Add("The GitHub profile URL is invalid.");
-    }
-
     if (string.IsNullOrWhiteSpace(name))
     {
         invalidReasons.Add("The name is invalid.");
@@ -96,8 +90,7 @@ static ValidatedBody ValidateAzure(string issueBody, string expectedOrganization
         invalidReasons.Add("The email address is invalid.");
     }
 
-    var githubHandle = profileUrl?.Replace("https://github.com/", "", StringComparison.Ordinal);
-    return new ValidatedBody(organisation, githubHandle, name, email, invalidReasons);
+    return new ValidatedBody(organisation, null, name, email, invalidReasons);
 }
 
 static ValidatedBody ValidateGitHub(string issueBody, string expectedOrganization)
@@ -155,18 +148,6 @@ static bool IsGitHubHandle(string? handle) =>
         handle,
         "^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$",
         RegexOptions.CultureInvariant);
-
-static bool IsGitHubProfileUrl(string? url)
-{
-    if (string.IsNullOrWhiteSpace(url) ||
-        !Uri.IsWellFormedUriString(url, UriKind.Absolute) ||
-        !url.StartsWith("https://github.com/", StringComparison.Ordinal))
-    {
-        return false;
-    }
-
-    return url.Split('/', StringSplitOptions.RemoveEmptyEntries).Length == 3;
-}
 
 static bool IsAllowedEmail(string? email)
 {

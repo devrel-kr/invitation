@@ -86,9 +86,9 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
           COMMENT_BODY: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
+            👋🏼
 
-            Your issue is being reviewed. We will notify you again once we confirm whether it is complete.
+            Your Azure onboarding request is being reviewed. We will notify you when it has been processed.
         run: |
           gh issue comment "$ISSUE_NUMBER" \
             --body "$COMMENT_BODY" \
@@ -119,7 +119,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
           COMMENT_BODY: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
+            👋🏼
 
             - Submitted at: ${{ steps.issue.outputs.submittedAt }}
             - Due by: ${{ steps.issue.outputs.dueBy }}
@@ -196,7 +196,7 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.issueNumber }}
           COMMENT_BODY: |
-            👋🏼 @${{ steps.issue.outputs.githubHandle }}!
+            👋🏼
 
             Access instructions have been sent to the email address you provided. Follow those instructions to join the subscription.
         run: |
