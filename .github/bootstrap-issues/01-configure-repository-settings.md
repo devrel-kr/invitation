@@ -47,6 +47,33 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   }
   JSON
   ```
+
+  In PowerShell, use a here-string:
+
+  ```powershell
+  $rulesetJson = @'
+  {
+    "name": "default",
+    "target": "branch",
+    "enforcement": "active",
+    "bypass_actors": [
+      {"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always"},
+      {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
+    ],
+    "conditions": {
+      "ref_name": {
+        "include": ["~DEFAULT_BRANCH"],
+        "exclude": []
+      }
+    },
+    "rules": [
+      { "type": "deletion" },
+      { "type": "non_fast_forward" }
+    ]
+  }
+  '@
+  $rulesetJson | gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input -
+  ```
 - [ ] Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` placeholder in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with a verified domain from the target tenant. See [Configure the expected Entra tenant domain](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#configure-the-expected-entra-tenant-domain).
 
   From the repository root, in Bash on Linux, Codespaces, or Git Bash, change `contoso.onmicrosoft.com` below to the verified domain:
