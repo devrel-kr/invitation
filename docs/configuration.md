@@ -25,7 +25,7 @@ When a repository is created from this template, `.github/workflows/init.yml` ru
 - creates the numbered setup issues from `.github/bootstrap-issues` in order; and
 - commits the personalized files, then removes `init.yml` and the bootstrap issue source files.
 
-The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities or configure repository variables or secrets. Complete the generated issues in order before accepting onboarding requests.
+The workflow can be manually dispatched from the default branch if the initial run needs recovery and the initializer is still present. It only personalizes files and creates setup issues; it does not create identities or configure repository variables or secrets. It also does not create repository rulesets: its `GITHUB_TOKEN` can write repository contents and issues, but cannot administer repository settings. Bootstrap issue 1 creates the ruleset manually using an administrator-authenticated `gh` session. Complete the generated issues in order before accepting onboarding requests.
 
 The Entra tenant domain cannot be inferred from GitHub repository metadata, so the initializer leaves that value for manual configuration in Bootstrap issue 3. See the matching section below and complete it before accepting Azure onboarding requests.
 
@@ -78,6 +78,56 @@ The manifest requests these permissions:
 After registration, the script opens the app installation page. Install the app on the target organization and grant it access to the repository created from this template. App installation still requires organization-owner approval and cannot be completed by the manifest exchange alone.
 
 The organization must own or install the app for the organization-level `Members: write` permission to be available. A missing permission or installation causes GitHub onboarding to fail with HTTP 403. The private key is sent directly to `gh secret set` through standard input and is not written to disk by the script.
+
+### Create the default-branch ruleset
+
+Create this ruleset during Bootstrap issue 1 while authenticated with `gh` as a repository administrator or organization owner. It targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories.
+
+Check for an existing ruleset named `default` before creating another:
+
+```bash
+gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
+```
+
+Save this payload locally as `default-branch-ruleset.json` (do not commit it):
+
+```json
+{
+  "name": "default",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [
+    {
+      "actor_id": null,
+      "actor_type": "OrganizationAdmin",
+      "bypass_mode": "always"
+    },
+    {
+      "actor_id": 5,
+      "actor_type": "RepositoryRole",
+      "bypass_mode": "always"
+    }
+  ],
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" }
+  ]
+}
+```
+
+`RepositoryRole` actor ID `5` represents repository administrators. Create the ruleset with `gh api`:
+
+```bash
+gh api --method POST \
+  "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
+  --input ./default-branch-ruleset.json
+```
 
 ## Create the GitHub onboarding team
 
