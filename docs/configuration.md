@@ -58,9 +58,14 @@ Check for an existing ruleset named `default` before creating another:
 gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
-Save this payload locally as `default-branch-ruleset.json` (do not commit it):
+The payload is also included in Bootstrap issue 1 so it can be copied directly from the task; keep both copies aligned. Send it directly to `gh api` on standard input; no temporary file is needed.
 
-```json
+`RepositoryRole` actor ID `5` represents repository administrators.
+
+```bash
+gh api --method POST \
+  "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
+  --input - <<'JSON'
 {
   "name": "default",
   "target": "branch",
@@ -80,16 +85,7 @@ Save this payload locally as `default-branch-ruleset.json` (do not commit it):
     { "type": "non_fast_forward" }
   ]
 }
-```
-
-`RepositoryRole` actor ID `5` represents repository administrators. Create the ruleset with `gh api`:
-
-The payload is also included in Bootstrap issue 1 so it can be copied directly from the task; keep both copies aligned.
-
-```bash
-gh api --method POST \
-  "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
-  --input ./default-branch-ruleset.json
+JSON
 ```
 
 ### Configure the expected Entra tenant domain

@@ -20,9 +20,12 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   ```
 
   This leaves repository visibility and pull-request availability unchanged; pull requests can be merged only with squash commits.
-- [ ] Check for an existing `default` ruleset with `gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"`. If none exists, save this payload locally as `default-branch-ruleset.json` (do not commit it):
+- [ ] Check for an existing `default` ruleset with `gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"`. If none exists, send the JSON payload directly to GitHub with `gh api`:
 
-  ```json
+  ```bash
+  gh api --method POST \
+    "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
+    --input - <<'JSON'
   {
     "name": "default",
     "target": "branch",
@@ -42,12 +45,7 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
       { "type": "non_fast_forward" }
     ]
   }
-  ```
-
-  Then create the ruleset with `gh api`:
-
-  ```bash
-  gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input ./default-branch-ruleset.json
+  JSON
   ```
 - [ ] Replace the quoted `{{ENTRA_TENANT_DOMAIN_NAME}}` placeholder in both Azure issue forms and `EXPECTED_ORGANIZATION` in `.github/workflows/onboard-user-to-azure.yml` with a verified domain from the target tenant. See [Configure the expected Entra tenant domain](https://github.com/{{ORG_NAME}}/{{REPOSITORY_NAME}}/blob/main/docs/configuration.md#configure-the-expected-entra-tenant-domain).
 - [ ] Validate the issue forms and workflows before accepting onboarding requests.
