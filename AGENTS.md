@@ -24,7 +24,7 @@ Keep repository-specific organization, tenant, subscription, and credential valu
 - Bootstrap issue numbering, file prefixes, creation order, and the corresponding sections in `docs/configuration.md` must stay aligned. Preserve the section anchors linked from the bootstrap issues.
 - The initializer replaces `{{ORG_NAME}}` and `{{REPOSITORY_NAME}}` in the README, docs, issue forms, workflows other than `init.yml`, scripts, and bootstrap issue bodies. Keep `init.yml` excluded from its own replacement pass.
 - Create the default-branch ruleset manually in Bootstrap issue 1 with an administrator-authenticated `gh api` call. Keep it out of `init.yml`; the initializer's `GITHUB_TOKEN` cannot administer repository settings.
-- The default-branch ruleset payload appears in Bash and PowerShell examples in Bootstrap issue 1 and `docs/configuration.md`; keep all copies aligned.
+- `scripts/Configure-DefaultBranchRuleset.cs` owns default-branch ruleset creation. Keep its behavior and the invocation guidance in Bootstrap issue 1 and `docs/configuration.md` aligned.
 - `{{ENTRA_TENANT_DOMAIN_NAME}}` is intentionally not replaced by initialization. Configure it with `scripts/Configure-EntraTenantDomain.cs` as described in Bootstrap issue 1.
 - `ONBOARDING_DUE_DATE` is optional. An unset value means ongoing onboarding; a configured non-empty value must be a valid ISO 8601 timestamp with an explicit offset.
 - Values such as `--app-name`, `--team-name`, and `--group-name` in setup examples are suggestions, not required constants. The setup scripts store generated IDs in repository variables; workflows use those IDs.

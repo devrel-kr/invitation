@@ -50,70 +50,15 @@ This leaves repository visibility and pull-request availability unchanged; pull 
 
 ### Create the default-branch ruleset
 
-The initializer does not create rulesets because its `GITHUB_TOKEN` cannot administer repository settings. Create this ruleset with an administrator-authenticated `gh` session. It targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories.
+The initializer does not create rulesets because its `GITHUB_TOKEN` cannot administer repository settings. Create this ruleset with an administrator-authenticated `gh` session. It targets the repository's default branch, prevents deletion and force pushes, and lets organization administrators and repository administrators bypass those rules. The `OrganizationAdmin` bypass applies only to organization-owned repositories, and `RepositoryRole` actor ID `5` represents repository administrators.
 
-Check for an existing ruleset named `default` before creating another:
-
-```bash
-gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
-```
-
-The payload is also included in Bootstrap issue 1 so it can be copied directly from the task; keep both copies aligned. Send it directly to `gh api` on standard input; no temporary file is needed.
-
-`RepositoryRole` actor ID `5` represents repository administrators.
+`Configure-DefaultBranchRuleset.cs` uses the authenticated `gh` session to check for an existing ruleset named `default`, then creates it if missing. The JSON payload is embedded in the file and passed to `gh api` through standard input. If a ruleset already exists, the helper makes no changes; verify that its settings match the requested configuration.
 
 ```bash
-gh api --method POST \
-  "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
-  --input - <<'JSON'
-{
-  "name": "default",
-  "target": "branch",
-  "enforcement": "active",
-  "bypass_actors": [
-    {"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always"},
-    {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
-  ],
-  "conditions": {
-    "ref_name": {
-      "include": ["~DEFAULT_BRANCH"],
-      "exclude": []
-    }
-  },
-  "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" }
-  ]
-}
-JSON
+dotnet run --file ./scripts/Configure-DefaultBranchRuleset.cs -- --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
 ```
 
-In PowerShell, use a single-quoted here-string:
-
-```powershell
-$rulesetJson = @'
-{
-  "name": "default",
-  "target": "branch",
-  "enforcement": "active",
-  "bypass_actors": [
-    {"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always"},
-    {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
-  ],
-  "conditions": {
-    "ref_name": {
-      "include": ["~DEFAULT_BRANCH"],
-      "exclude": []
-    }
-  },
-  "rules": [
-    { "type": "deletion" },
-    { "type": "non_fast_forward" }
-  ]
-}
-'@
-$rulesetJson | gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input -
-```
+The command assumes the repository root is the current directory. If invoking it elsewhere, provide the path to the helper script.
 
 ### Configure the expected Entra tenant domain
 

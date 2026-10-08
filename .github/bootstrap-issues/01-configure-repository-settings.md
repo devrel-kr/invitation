@@ -20,60 +20,13 @@ Set the repository features, default-branch ruleset, and Azure tenant-domain con
   ```
 
   This leaves repository visibility and pull-request availability unchanged; pull requests can be merged only with squash commits.
-- [ ] Check for an existing `default` ruleset with `gh ruleset list --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"`. If none exists, send the JSON payload directly to GitHub with `gh api`:
+- [ ] Create the default-branch ruleset. The helper checks for an existing `default` ruleset and skips creation if one is already present; verify that an existing ruleset matches the requested settings.
 
   ```bash
-  gh api --method POST \
-    "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" \
-    --input - <<'JSON'
-  {
-    "name": "default",
-    "target": "branch",
-    "enforcement": "active",
-    "bypass_actors": [
-      {"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always"},
-      {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
-    ],
-    "conditions": {
-      "ref_name": {
-        "include": ["~DEFAULT_BRANCH"],
-        "exclude": []
-      }
-    },
-    "rules": [
-      { "type": "deletion" },
-      { "type": "non_fast_forward" }
-    ]
-  }
-  JSON
+  dotnet run --file ./scripts/Configure-DefaultBranchRuleset.cs -- --repo "{{ORG_NAME}}/{{REPOSITORY_NAME}}"
   ```
 
-  In PowerShell, use a here-string:
-
-  ```powershell
-  $rulesetJson = @'
-  {
-    "name": "default",
-    "target": "branch",
-    "enforcement": "active",
-    "bypass_actors": [
-      {"actor_id": null, "actor_type": "OrganizationAdmin", "bypass_mode": "always"},
-      {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always"}
-    ],
-    "conditions": {
-      "ref_name": {
-        "include": ["~DEFAULT_BRANCH"],
-        "exclude": []
-      }
-    },
-    "rules": [
-      { "type": "deletion" },
-      { "type": "non_fast_forward" }
-    ]
-  }
-  '@
-  $rulesetJson | gh api --method POST "repos/{{ORG_NAME}}/{{REPOSITORY_NAME}}/rulesets" --input -
-  ```
+  The helper uses the authenticated `gh` session. If running it outside the repository root, provide the path to the script.
 - [ ] Configure the verified Entra tenant domain by replacing the example domain and running this command. The helper locates the repository root by searching upward from its source file for `global.json`; when running it from outside the repository, provide the path to the helper script.
 
   ```bash
